@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stoicism - Ancient Wisdom for Modern Times</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* Custom Cursor */
+        .custom-cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor-dot {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Fullscreen Menu */
+        .menu-toggle {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            width: 60px;
+            height: 60px;
+            z-index: 1001;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-toggle span {
+            width: 24px;
+            height: 2px;
+            background: white;
+            transition: all 0.3s ease;
+            display: block;
+            position: relative;
+        }
+
+        .menu-toggle.active {
+            gap: 0;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg);
+            position: absolute;
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            transform: rotate(-45deg);
+            position: absolute;
+        }
+
+        .fullscreen-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #000000;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .fullscreen-menu.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .menu-content {
+            text-align: center;
+        }
+
+        .menu-items {
+            list-style: none;
+        }
+
+        .menu-items li {
+            margin: 30px 0;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.5s ease;
+        }
+
+        .fullscreen-menu.active .menu-items li {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .menu-items li:nth-child(1) { transition-delay: 0.1s; }
+        .menu-items li:nth-child(2) { transition-delay: 0.2s; }
+        .menu-items li:nth-child(3) { transition-delay: 0.3s; }
+        .menu-items li:nth-child(4) { transition-delay: 0.4s; }
+        .menu-items li:nth-child(5) { transition-delay: 0.5s; }
+        .menu-items li:nth-child(6) { transition-delay: 0.6s; }
+
+        .menu-items a {
+            color: white;
+            text-decoration: none;
+            font-size: clamp(40px, 8vw, 80px);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .menu-items a:hover {
+            transform: translateX(20px);
+            opacity: 0.6;
+        }
+
+        .menu-social {
+            margin-top: 60px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease 0.7s;
+        }
+
+        .fullscreen-menu.active .menu-social {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .menu-social a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            margin: 0 20px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-social a:hover {
+            opacity: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-size: clamp(80px, 15vw, 220px);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1.5s ease forwards;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-subtitle {
+            position: absolute;
+            bottom: 80px;
+            font-size: clamp(18px, 2vw, 24px);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInUp 1.5s ease 0.5s forwards;
+            z-index: 2;
+        }
+
+        /* 3D Rotating Cube Background */
+        .cube-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            perspective: 1000px;
+        }
+
+        .cube {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateCube 20s infinite linear;
+        }
+
+        .cube-face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .cube-face.front  { transform: rotateY(0deg) translateZ(100px); }
+        .cube-face.back   { transform: rotateY(180deg) translateZ(100px); }
+        .cube-face.right  { transform: rotateY(90deg) translateZ(100px); }
+        .cube-face.left   { transform: rotateY(-90deg) translateZ(100px); }
+        .cube-face.top    { transform: rotateX(90deg) translateZ(100px); }
+        .cube-face.bottom { transform: rotateX(-90deg) translateZ(100px); }
+
+        @keyframes rotateCube {
+            from { transform: rotateX(0deg) rotateY(0deg); }
+            to { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        /* Floating circles decoration */
+        .circle {
+            position: absolute;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .circle-1 {
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: -150px;
+            animation-delay: 0s;
+        }
+
+        .circle-2 {
+            width: 200px;
+            height: 200px;
+            bottom: 20%;
+            right: -100px;
+            animation-delay: 2s;
+        }
+
+        .circle-3 {
+            width: 400px;
+            height: 400px;
+            top: 50%;
+            right: 10%;
+            animation-delay: 4s;
+        }
+
+        /* Parallax Layers */
+        .parallax-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .parallax-element {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        /* Philosophy Section */
+        .philosophy-section {
+            padding: 150px 50px;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        .philosophy-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .big-text {
+            font-size: clamp(40px, 8vw, 120px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 50px;
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        .big-text.visible {
+            animation: slideInLeft 1s ease forwards;
+        }
+
+        .description {
+            font-size: clamp(18px, 2vw, 28px);
+            line-height: 1.6;
+            max-width: 800px;
+            opacity: 0.8;
+            margin-bottom: 80px;
+        }
+
+        /* 3D Philosopher Models Section - New Design */
+        .philosophers-section {
+            padding: 200px 0;
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ensure smooth blending with background */
+        .philosophers-container {
+            isolation: isolate;
+        }
+
+        .philosophers-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 150px;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .philosophers-title.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .philosophers-title:hover {
+            transform: scale(1.05);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .philosophers-container {
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 0 50px;
+        }
+
+        .philosopher-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            margin-bottom: 200px;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(100px);
+            position: relative;
+        }
+
+        /* Add extra padding/blending for smooth container integration */
+        .philosopher-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -5%;
+            width: 110%;
+            height: 140%;
+            transform: translateY(-50%);
+            background: 
+                radial-gradient(ellipse at center, 
+                    transparent 0%,
+                    rgba(0,0,0,0.05) 30%,
+                    rgba(0,0,0,0.12) 50%,
+                    transparent 75%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .philosopher-item.visible {
+            animation: fadeInUp 1.2s ease forwards;
+        }
+
+        .philosopher-item:nth-child(even) {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .philosopher-item:nth-child(even) .philosopher-3d-viewer {
+            order: 2;
+        }
+
+        .philosopher-item:nth-child(even) .philosopher-info {
+            order: 1;
+        }
+
+        .philosopher-3d-viewer {
+            width: 100%;
+            height: 600px;
+            background: transparent;
+            position: relative;
+            overflow: visible;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+            z-index: 1;
+        }
+
+        .philosopher-3d-viewer:active {
+            cursor: grabbing;
+        }
+
+        .philosopher-3d-viewer canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .philosopher-3d-viewer:hover {
+            transform: translateY(-10px) scale(1.02);
+        }
+
+        /* Ultra-smooth gradient blending into section background - Edge fade */
+        .philosopher-3d-viewer::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            left: -120px;
+            right: -120px;
+            bottom: -120px;
+            background: 
+                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                radial-gradient(ellipse 150% 150% at center, 
+                    transparent 0%, 
+                    transparent 20%, 
+                    rgba(0, 0, 0, 0.1) 35%, 
+                    rgba(0, 0, 0, 0.3) 50%, 
+                    rgba(0, 0, 0, 0.6) 65%,
+                    rgba(0, 0, 0, 0.8) 75%, 
+                    rgba(0, 0, 0, 0.92) 87%,
+                    rgba(0, 0, 0, 0.97) 93%,
+                    #000000 100%);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Second layer for center-out blending */
+        .philosopher-3d-viewer::after {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            right: -100px;
+            bottom: -100px;
+            background: 
+                radial-gradient(ellipse 140% 140% at center, 
+                    transparent 0%, 
+                    transparent 30%, 
+                    rgba(0, 0, 0, 0.15) 45%, 
+                    rgba(0, 0, 0, 0.4) 60%,
+                    rgba(0, 0, 0, 0.7) 75%,
+                    rgba(0, 0, 0, 0.88) 87%,
+                    #000000 100%);
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        /* Unique styling for each philosopher viewer - ultra-smooth blends with edge fading */
+        #marcus-viewer::before {
+            background: 
+                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                radial-gradient(ellipse 150% 150% at 30% 40%, 
+                    transparent 0%, 
+                    transparent 18%,
+                    rgba(139, 69, 19, 0.06) 32%, 
+                    rgba(30, 20, 10, 0.2) 48%, 
+                    rgba(20, 15, 10, 0.4) 62%,
+                    rgba(0, 0, 0, 0.7) 73%,
+                    rgba(0, 0, 0, 0.88) 85%,
+                    rgba(0, 0, 0, 0.96) 93%,
+                    #000000 100%);
+        }
+
+        #marcus-viewer::after {
+            background: 
+                radial-gradient(ellipse 140% 140% at 30% 40%, 
+                    transparent 0%, 
+                    transparent 28%,
+                    rgba(139, 69, 19, 0.03) 43%, 
+                    rgba(0, 0, 0, 0.3) 62%,
+                    rgba(0, 0, 0, 0.65) 77%,
+                    rgba(0, 0, 0, 0.85) 88%,
+                    #000000 100%);
+        }
+
+        #epictetus-viewer::before {
+            background: 
+                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                radial-gradient(ellipse 150% 150% at 70% 40%, 
+                    transparent 0%, 
+                    transparent 18%,
+                    rgba(30, 60, 90, 0.06) 32%, 
+                    rgba(10, 20, 30, 0.2) 48%, 
+                    rgba(8, 15, 22, 0.4) 62%,
+                    rgba(0, 0, 0, 0.7) 73%,
+                    rgba(0, 0, 0, 0.88) 85%,
+                    rgba(0, 0, 0, 0.96) 93%,
+                    #000000 100%);
+        }
+
+        #epictetus-viewer::after {
+            background: 
+                radial-gradient(ellipse 140% 140% at 70% 40%, 
+                    transparent 0%, 
+                    transparent 28%,
+                    rgba(30, 60, 90, 0.03) 43%, 
+                    rgba(0, 0, 0, 0.3) 62%,
+                    rgba(0, 0, 0, 0.65) 77%,
+                    rgba(0, 0, 0, 0.85) 88%,
+                    #000000 100%);
+        }
+
+        #seneca-viewer::before {
+            background: 
+                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                radial-gradient(ellipse 150% 150% at center, 
+                    transparent 0%, 
+                    transparent 18%,
+                    rgba(80, 40, 100, 0.06) 32%, 
+                    rgba(20, 15, 25, 0.2) 48%, 
+                    rgba(15, 10, 18, 0.4) 62%,
+                    rgba(0, 0, 0, 0.7) 73%,
+                    rgba(0, 0, 0, 0.88) 85%,
+                    rgba(0, 0, 0, 0.96) 93%,
+                    #000000 100%);
+        }
+
+        #seneca-viewer::after {
+            background: 
+                radial-gradient(ellipse 140% 140% at center, 
+                    transparent 0%, 
+                    transparent 28%,
+                    rgba(80, 40, 100, 0.03) 43%, 
+                    rgba(0, 0, 0, 0.3) 62%,
+                    rgba(0, 0, 0, 0.65) 77%,
+                    rgba(0, 0, 0, 0.85) 88%,
+                    #000000 100%);
+        }
+
+        /* Hover glow overlay layers - smooth opacity transitions */
+        #marcus-viewer .hover-glow,
+        #epictetus-viewer .hover-glow,
+        #seneca-viewer .hover-glow {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            right: -100px;
+            bottom: -100px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 7;
+        }
+
+        #marcus-viewer .hover-glow {
+            background: 
+                radial-gradient(ellipse 140% 140% at 30% 40%, 
+                    transparent 0%, 
+                    transparent 25%,
+                    rgba(139, 69, 19, 0.12) 40%, 
+                    rgba(30, 20, 10, 0.18) 55%, 
+                    rgba(20, 13, 7, 0.1) 70%,
+                    transparent 85%);
+        }
+
+        #epictetus-viewer .hover-glow {
+            background: 
+                radial-gradient(ellipse 140% 140% at 70% 40%, 
+                    transparent 0%, 
+                    transparent 25%,
+                    rgba(30, 60, 90, 0.12) 40%, 
+                    rgba(10, 20, 30, 0.18) 55%, 
+                    rgba(7, 13, 20, 0.1) 70%,
+                    transparent 85%);
+        }
+
+        #seneca-viewer .hover-glow {
+            background: 
+                radial-gradient(ellipse 140% 140% at center, 
+                    transparent 0%, 
+                    transparent 25%,
+                    rgba(80, 40, 100, 0.12) 40%, 
+                    rgba(20, 15, 25, 0.18) 55%, 
+                    rgba(13, 10, 16, 0.1) 70%,
+                    transparent 85%);
+        }
+
+        #marcus-viewer:hover .hover-glow,
+        #epictetus-viewer:hover .hover-glow,
+        #seneca-viewer:hover .hover-glow {
+            opacity: 1;
+        }
+
+        .model-label {
+            display: none;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            opacity: 0.3;
+            z-index: 5;
+            text-transform: uppercase;
+        }
+
+        .philosopher-info {
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .philosopher-number {
+            font-size: 120px;
+            font-weight: 900;
+            opacity: 0.05;
+            line-height: 1;
+            margin-bottom: -40px;
+        }
+
+        .philosopher-name {
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 900;
+            margin-bottom: 20px;
+            line-height: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .philosopher-dates {
+            font-size: 18px;
+            opacity: 0.4;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .philosopher-role {
+            font-size: 24px;
+            font-style: italic;
+            opacity: 0.7;
+            margin-bottom: 40px;
+        }
+
+        .philosopher-quote {
+            font-size: clamp(20px, 3vw, 32px);
+            line-height: 1.5;
+            font-style: italic;
+            margin-bottom: 40px;
+            padding-left: 30px;
+            border-left: 3px solid rgba(255, 255, 255, 0.3);
+            opacity: 0.9;
+        }
+
+        .philosopher-bio {
+            font-size: 18px;
+            line-height: 1.8;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+
+        .philosopher-achievements {
+            list-style: none;
+            padding: 0;
+        }
+
+        .philosopher-achievements li {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.7;
+            padding-left: 30px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .philosopher-achievements li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            opacity: 0.5;
+        }
+
+        /* Three.js Canvas Background */
+        #threejs-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Timeline Section */
+        .timeline-section {
+            padding: 200px 50px;
+            background: #0a0a0a;
+            position: relative;
+        }
+
+        .timeline-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 150px;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-title.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .timeline-title:hover {
+            transform: scale(1.05);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .timeline {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            padding: 50px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            z-index: 0;
+        }
+
+        .timeline-progress {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 0%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
+            z-index: 1;
+            top: 0;
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            margin-bottom: 120px;
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .timeline-item.visible {
+            animation: fadeInUp 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content {
+            grid-column: 1;
+            text-align: right;
+            padding-right: 60px;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            grid-column: 2;
+            text-align: left;
+            padding-left: 60px;
+        }
+
+        .timeline-item:nth-child(odd)::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border: 4px solid #0a0a0a;
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-item:nth-child(even)::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border: 4px solid #0a0a0a;
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-content {
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .timeline-content:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .timeline-year {
+            font-size: 64px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.5) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timeline-event {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .timeline-description {
+            font-size: 16px;
+            line-height: 1.8;
+            opacity: 0.8;
+        }
+
+        /* Horizontal Scroll Section */
+        .horizontal-section {
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .horizontal-scroll-wrapper {
+            display: flex;
+            height: 100%;
+            will-change: transform;
+        }
+
+        .principle-card {
+            min-width: 100vw;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 100px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .principle-card:nth-child(1) { background: #1a1a1a; }
+        .principle-card:nth-child(2) { background: #0f0f0f; }
+        .principle-card:nth-child(3) { background: #141414; }
+        .principle-card:nth-child(4) { background: #0a0a0a; }
+
+        .principle-number {
+            font-size: clamp(100px, 20vw, 300px);
+            font-weight: 900;
+            opacity: 0.1;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .principle-title {
+            font-size: clamp(50px, 10vw, 100px);
+            font-weight: 900;
+            margin-bottom: 30px;
+            text-align: center;
+            z-index: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            padding: 0 20px;
+        }
+
+        .principle-text {
+            font-size: clamp(18px, 2vw, 24px);
+            max-width: 600px;
+            text-align: center;
+            opacity: 0.8;
+            z-index: 1;
+        }
+
+        /* Illustration Section */
+        .illustration-section {
+            padding: 150px 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .stoic-illustration {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .stoic-illustration:hover {
+            transform: scale(1.05);
+        }
+
+        .stoic-figure {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .stoic-figure.visible {
+            animation: scaleIn 1.5s ease forwards;
+        }
+
+        /* Animated elements within the SVG */
+        .stoic-figure circle,
+        .stoic-figure line,
+        .stoic-figure path,
+        .stoic-figure rect {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stoic-figure circle {
+            transform-origin: center;
+        }
+
+        /* Quote Section */
+        .quote-section {
+            padding: 200px 50px;
+            text-align: center;
+            background: #000000;
+        }
+
+        .quote {
+            font-size: clamp(30px, 6vw, 80px);
+            font-weight: 700;
+            line-height: 1.3;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            font-style: italic;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .quote.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .quote-author {
+            font-size: clamp(18px, 2vw, 28px);
+            opacity: 0.6;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        /* Virtues Grid */
+        .virtues-section {
+            padding: 150px 50px;
+            background: #0f0f0f;
+            transition: background 0.3s ease;
+        }
+
+        .virtues-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 100px;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .virtues-title.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .virtues-title:hover {
+            transform: scale(1.05) rotateZ(1deg);
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+        }
+
+        .virtues-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 600px;
+        }
+
+        /* Bento grid layout - different sizes for each virtue */
+        .virtue-item:nth-child(1) {
+            grid-column: 1 / 3;
+            grid-row: 1 / 2;
+        }
+
+        .virtue-item:nth-child(2) {
+            grid-column: 3 / 5;
+            grid-row: 1 / 2;
+        }
+
+        .virtue-item:nth-child(3) {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+        }
+
+        .virtue-item:nth-child(4) {
+            grid-column: 2 / 5;
+            grid-row: 2 / 3;
+        }
+
+        .virtue-item {
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateY(50px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .virtue-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .virtue-item:hover::before {
+            left: 100%;
+        }
+
+        .virtue-item.visible {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .virtue-item:nth-child(2) { animation-delay: 0.1s; }
+        .virtue-item:nth-child(3) { animation-delay: 0.2s; }
+        .virtue-item:nth-child(4) { animation-delay: 0.3s; }
+
+        .virtue-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-10px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .virtue-name {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 900;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .virtue-description {
+            font-size: clamp(16px, 1.5vw, 20px);
+            line-height: 1.6;
+            opacity: 0.8;
+        }
+
+        /* Daily Practices Section */
+        .practices-section {
+            padding: 200px 50px;
+            background: #000000;
+            position: relative;
+        }
+
+        .practices-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 100px;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .practices-title.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .practices-title:hover {
+            transform: scale(1.05) rotateZ(-1deg);
+            text-shadow: 0 0 35px rgba(255, 255, 255, 0.35);
+        }
+
+        .practices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .practice-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: scale(0.9);
+            position: relative;
+        }
+
+        .practice-card.visible {
+            animation: scaleIn 0.8s ease forwards;
+        }
+
+        .practice-card:nth-child(2) { animation-delay: 0.15s; }
+        .practice-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .practice-number {
+            font-size: 80px;
+            font-weight: 900;
+            opacity: 0.1;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .practice-name {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .practice-description {
+            font-size: 18px;
+            line-height: 1.7;
+            opacity: 0.8;
+            margin-bottom: 25px;
+        }
+
+        .practice-tip {
+            font-size: 16px;
+            font-style: italic;
+            opacity: 0.6;
+            padding-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .practice-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Final Section */
+        .final-section {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-text {
+            font-size: clamp(50px, 10vw, 140px);
+            font-weight: 900;
+            text-align: center;
+            max-width: 1400px;
+            padding: 0 50px;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .final-text.visible {
+            animation: scaleIn 1.5s ease forwards;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(30px, -30px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-20px, 20px) rotate(240deg);
+            }
+        }
+
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            body {
+                cursor: auto;
+            }
+
+            .custom-cursor,
+            .custom-cursor-dot {
+                display: none;
+            }
+
+            .philosopher-item {
+                grid-template-columns: 1fr !important;
+                gap: 40px;
+            }
+
+            .philosopher-item:nth-child(even) .philosopher-3d-viewer,
+            .philosopher-item:nth-child(even) .philosopher-info {
+                order: 0 !important;
+            }
+
+            .philosopher-3d-viewer {
+                height: 500px;
+            }
+
+            /* Adjust bento grid for medium screens */
+            .virtues-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: auto;
+                min-height: auto;
+            }
+
+            .virtue-item:nth-child(1) {
+                grid-column: 1 / 2;
+                grid-row: 1 / 2;
+            }
+
+            .virtue-item:nth-child(2) {
+                grid-column: 2 / 3;
+                grid-row: 1 / 2;
+            }
+
+            .virtue-item:nth-child(3) {
+                grid-column: 1 / 2;
+                grid-row: 2 / 3;
+            }
+
+            .virtue-item:nth-child(4) {
+                grid-column: 2 / 3;
+                grid-row: 2 / 3;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .philosophy-section,
+            .virtues-section,
+            .illustration-section {
+                padding: 100px 30px;
+            }
+
+            .principle-card {
+                padding: 50px 20px;
+            }
+
+            .principle-title {
+                font-size: clamp(40px, 8vw, 60px);
+                padding: 0 10px;
+            }
+
+            .virtues-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                gap: 30px;
+                min-height: auto;
+            }
+
+            .virtue-item:nth-child(1),
+            .virtue-item:nth-child(2),
+            .virtue-item:nth-child(3),
+            .virtue-item:nth-child(4) {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .practices-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline {
+                padding-left: 40px;
+            }
+
+            .timeline::before {
+                left: 0;
+                transform: translateX(0);
+            }
+
+            .timeline-progress {
+                left: 0;
+                transform: translateX(0);
+            }
+
+            .timeline-item {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .timeline-item:nth-child(odd) .timeline-content,
+            .timeline-item:nth-child(even) .timeline-content {
+                grid-column: 1;
+                text-align: left;
+                padding: 30px;
+                padding-left: 50px;
+                margin-left: 30px;
+            }
+
+            .timeline-item::after {
+                left: 0 !important;
+                transform: translate(-50%, -50%) !important;
+            }
+
+            .philosopher-3d-viewer {
+                height: 400px;
+            }
+
+            .philosopher-info {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor"></div>
+    <div class="custom-cursor-dot" id="customCursorDot"></div>
+
+    <!-- Menu Toggle -->
+    <div class="menu-toggle" id="menuToggle">
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Fullscreen Menu -->
+    <div class="fullscreen-menu" id="fullscreenMenu">
+        <div class="menu-content">
+            <ul class="menu-items">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#philosophy">Philosophy</a></li>
+                <li><a href="#philosophers">Masters</a></li>
+                <li><a href="#virtues">Virtues</a></li>
+                <li><a href="#practices">Practices</a></li>
+                <li><a href="#wisdom">Wisdom</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="parallax-layer" id="parallaxLayer"></div>
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+        <div class="cube-container">
+            <div class="cube">
+                <div class="cube-face front"></div>
+                <div class="cube-face back"></div>
+                <div class="cube-face right"></div>
+                <div class="cube-face left"></div>
+                <div class="cube-face top"></div>
+                <div class="cube-face bottom"></div>
+            </div>
+        </div>
+        <h1 class="hero-title">STOICISM</h1>
+        <p class="hero-subtitle">Ancient Wisdom</p>
+        <div class="scroll-indicator">Scroll ↓</div>
+    </section>
+
+    <!-- Philosophy Section -->
+    <section class="philosophy-section" id="philosophy">
+        <div class="philosophy-content">
+            <h2 class="big-text scroll-animate">The Art of Living</h2>
+            <p class="description">
+                Stoicism teaches us to focus on what we can control and accept what we cannot. 
+                It's not about suppressing emotions, but about understanding them and responding with wisdom. 
+                A philosophy born in ancient Athens, refined in Rome, and relevant in every age.
+            </p>
+        </div>
+    </section>
+
+    <!-- 3D Philosophers Section -->
+    <section class="philosophers-section" id="philosophers">
+        <canvas id="threejs-canvas"></canvas>
+        <h2 class="philosophers-title scroll-animate">THE MASTERS</h2>
+        <div class="philosophers-container">
+            <!-- Marcus Aurelius -->
+            <div class="philosopher-item scroll-animate">
+                <div class="philosopher-3d-viewer" id="marcus-viewer">
+                    <div class="hover-glow"></div>
+                    <div class="loading-indicator">LOADING MODEL...</div>
+                </div>
+                <div class="philosopher-info">
+                    <div class="philosopher-number">01</div>
+                    <h3 class="philosopher-name">Marcus Aurelius</h3>
+                    <p class="philosopher-dates">121 - 180 AD</p>
+                    <p class="philosopher-role">Emperor & Philosopher</p>
+                    <blockquote class="philosopher-quote">
+                        "You have power over your mind—not outside events. Realize this, and you will find strength."
+                    </blockquote>
+                    <p class="philosopher-bio">
+                        The last of the Five Good Emperors of Rome, Marcus Aurelius ruled during one of the most turbulent periods in Roman history. Despite facing wars, plague, and political intrigue, he maintained his commitment to Stoic principles. His personal writings, known as the Meditations, were never intended for publication but have become one of the most influential works of philosophy.
+                    </p>
+                    <ul class="philosopher-achievements">
+                        <li>Wrote "Meditations" during military campaigns</li>
+                        <li>Ruled Rome during the Antonine Plague</li>
+                        <li>Maintained philosophical integrity while wielding absolute power</li>
+                        <li>Embodied the concept of the "philosopher king"</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Epictetus -->
+            <div class="philosopher-item scroll-animate">
+                <div class="philosopher-3d-viewer" id="epictetus-viewer">
+                    <div class="hover-glow"></div>
+                    <div class="loading-indicator">LOADING MODEL...</div>
+                </div>
+                <div class="philosopher-info">
+                    <div class="philosopher-number">02</div>
+                    <h3 class="philosopher-name">Epictetus</h3>
+                    <p class="philosopher-dates">50 - 135 AD</p>
+                    <p class="philosopher-role">Slave Turned Teacher</p>
+                    <blockquote class="philosopher-quote">
+                        "It's not what happens to you, but how you react to it that matters."
+                    </blockquote>
+                    <p class="philosopher-bio">
+                        Born into slavery in Hierapolis (modern-day Turkey), Epictetus became one of the most influential Stoic philosophers. After gaining his freedom, he established his own school in Nicopolis where he taught that philosophy is not just theory but a way of life. His teachings were recorded by his student Arrian in two works: the Discourses and the Enchiridion (Handbook).
+                    </p>
+                    <ul class="philosopher-achievements">
+                        <li>Rose from slavery to become a renowned philosopher</li>
+                        <li>Emphasized practical ethics over abstract theory</li>
+                        <li>Taught the dichotomy of control—what's in our power vs. what's not</li>
+                        <li>Influenced Marcus Aurelius and countless others</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Seneca -->
+            <div class="philosopher-item scroll-animate">
+                <div class="philosopher-3d-viewer" id="seneca-viewer">
+                    <div class="hover-glow"></div>
+                    <div class="loading-indicator">LOADING MODEL...</div>
+                </div>
+                <div class="philosopher-info">
+                    <div class="philosopher-number">03</div>
+                    <h3 class="philosopher-name">Seneca</h3>
+                    <p class="philosopher-dates">4 BC - 65 AD</p>
+                    <p class="philosopher-role">Statesman & Writer</p>
+                    <blockquote class="philosopher-quote">
+                        "We suffer more often in imagination than in reality."
+                    </blockquote>
+                    <p class="philosopher-bio">
+                        Lucius Annaeus Seneca was a Roman Stoic philosopher, statesman, and dramatist who served as advisor to Emperor Nero. Born in Cordoba, Spain, he became one of Rome's wealthiest and most powerful men. His extensive writings on Stoicism—including essays, letters, and plays—made philosophy accessible to a wider audience. Despite his wealth and status, he faced exile, political intrigue, and ultimately was forced to take his own life.
+                    </p>
+                    <ul class="philosopher-achievements">
+                        <li>Wrote numerous essays on practical Stoic ethics</li>
+                        <li>Authored 124 "Moral Letters to Lucilius"</li>
+                        <li>Served as advisor to Emperor Nero</li>
+                        <li>Explored themes of time, death, and how to live well</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section">
+        <h2 class="timeline-title scroll-animate">THE JOURNEY</h2>
+        <div class="timeline">
+            <div class="timeline-progress" id="timelineProgress"></div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-content">
+                    <div class="timeline-year">300 BC</div>
+                    <h3 class="timeline-event">Birth in Athens</h3>
+                    <p class="timeline-description">
+                        Zeno of Citium founded Stoicism in Athens, teaching from the Stoa Poikile (Painted Porch), from which the philosophy derives its name.
+                    </p>
+                </div>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-content">
+                    <div class="timeline-year">155 BC</div>
+                    <h3 class="timeline-event">Arrives in Rome</h3>
+                    <p class="timeline-description">
+                        Stoicism spreads to Rome, where it finds fertile ground among politicians, soldiers, and citizens seeking practical wisdom.
+                    </p>
+                </div>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-content">
+                    <div class="timeline-year">50 AD</div>
+                    <h3 class="timeline-event">Golden Age</h3>
+                    <p class="timeline-description">
+                        The height of Roman Stoicism with Epictetus teaching freed slaves and citizens, while Seneca advises Emperor Nero.
+                    </p>
+                </div>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-content">
+                    <div class="timeline-year">170 AD</div>
+                    <h3 class="timeline-event">Philosopher King</h3>
+                    <p class="timeline-description">
+                        Marcus Aurelius writes his Meditations while ruling the Roman Empire and defending its borders, proving Stoicism's practical power.
+                    </p>
+                </div>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-content">
+                    <div class="timeline-year">2025 AD</div>
+                    <h3 class="timeline-event">Modern Renaissance</h3>
+                    <p class="timeline-description">
+                        Stoicism experiences a revival as people seek timeless wisdom to navigate modern challenges, stress, and uncertainty.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Horizontal Scroll Section -->
+    <section class="horizontal-section">
+        <div class="horizontal-scroll-wrapper" id="horizontalWrapper">
+            <div class="principle-card">
+                <div class="principle-number">01</div>
+                <h3 class="principle-title">WISDOM</h3>
+                <p class="principle-text">
+                    The ability to navigate complex situations with clear judgment and understanding
+                </p>
+            </div>
+            <div class="principle-card">
+                <div class="principle-number">02</div>
+                <h3 class="principle-title">COURAGE</h3>
+                <p class="principle-text">
+                    Not the absence of fear, but the willingness to face challenges despite uncertainty
+                </p>
+            </div>
+            <div class="principle-card">
+                <div class="principle-number">03</div>
+                <h3 class="principle-title">JUSTICE</h3>
+                <p class="principle-text">
+                    Treating others with fairness and contributing to the common good
+                </p>
+            </div>
+            <div class="principle-card">
+                <div class="principle-number">04</div>
+                <h3 class="principle-title">TEMPERANCE</h3>
+                <p class="principle-text">
+                    Self-control and moderation in all aspects of life
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Illustration Section -->
+    <section class="illustration-section">
+        <svg class="stoic-illustration stoic-figure scroll-animate" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg" id="stoicFigure">
+            <!-- Head -->
+            <circle id="stoic-head" cx="400" cy="280" r="80" stroke="white" stroke-width="3" fill="none" opacity="0.8"/>
+            <!-- Neck -->
+            <path id="stoic-neck" d="M 320 360 Q 400 340 480 360" stroke="white" stroke-width="3" fill="none" opacity="0.8"/>
+            <!-- Body -->
+            <rect id="stoic-body" x="340" y="360" width="120" height="200" stroke="white" stroke-width="3" fill="none" opacity="0.8"/>
+            <!-- Arms -->
+            <line id="stoic-arm-left" class="stoic-arm" x1="340" y1="420" x2="280" y2="500" stroke="white" stroke-width="3" opacity="0.8"/>
+            <line id="stoic-arm-right" class="stoic-arm" x1="460" y1="420" x2="520" y2="500" stroke="white" stroke-width="3" opacity="0.8"/>
+            <!-- Legs -->
+            <line id="stoic-leg-left" class="stoic-leg" x1="360" y1="560" x2="360" y2="680" stroke="white" stroke-width="3" opacity="0.8"/>
+            <line id="stoic-leg-right" class="stoic-leg" x1="440" y1="560" x2="440" y2="680" stroke="white" stroke-width="3" opacity="0.8"/>
+            <!-- Aura circles -->
+            <circle id="aura-1" class="stoic-aura" cx="400" cy="400" r="250" stroke="white" stroke-width="1" fill="none" opacity="0.2"/>
+            <circle id="aura-2" class="stoic-aura" cx="400" cy="400" r="300" stroke="white" stroke-width="1" fill="none" opacity="0.1"/>
+            <!-- Compass lines -->
+            <line id="compass-top" class="stoic-compass" x1="400" y1="100" x2="400" y2="150" stroke="white" stroke-width="2" opacity="0.3"/>
+            <line id="compass-top-right" class="stoic-compass" x1="550" y1="150" x2="520" y2="190" stroke="white" stroke-width="2" opacity="0.3"/>
+            <line id="compass-right" class="stoic-compass" x1="650" y1="400" x2="600" y2="400" stroke="white" stroke-width="2" opacity="0.3"/>
+            <line id="compass-top-left" class="stoic-compass" x1="250" y1="150" x2="280" y2="190" stroke="white" stroke-width="2" opacity="0.3"/>
+            <line id="compass-left" class="stoic-compass" x1="150" y1="400" x2="200" y2="400" stroke="white" stroke-width="2" opacity="0.3"/>
+        </svg>
+    </section>
+
+    <!-- Quote Section -->
+    <section class="quote-section">
+        <blockquote class="quote scroll-animate">
+            "You have power over your mind, not outside events. Realize this, and you will find strength."
+        </blockquote>
+        <p class="quote-author">— Marcus Aurelius</p>
+    </section>
+
+    <!-- Virtues Grid Section -->
+    <section class="virtues-section" id="virtues">
+        <h2 class="virtues-title scroll-animate">FOUR VIRTUES</h2>
+        <div class="virtues-grid">
+            <div class="virtue-item scroll-animate">
+                <h3 class="virtue-name">Wisdom</h3>
+                <p class="virtue-description">
+                    The knowledge of what is good, what is bad, and what is neither. It guides us to make sound decisions and see the world clearly.
+                </p>
+            </div>
+            <div class="virtue-item scroll-animate">
+                <h3 class="virtue-name">Courage</h3>
+                <p class="virtue-description">
+                    The strength to face difficulty, danger, and uncertainty with grace and determination. It means doing what is right even when it's hard.
+                </p>
+            </div>
+            <div class="virtue-item scroll-animate">
+                <h3 class="virtue-name">Justice</h3>
+                <p class="virtue-description">
+                    Treating others fairly and working towards the greater good of humanity. We are all part of something larger than ourselves.
+                </p>
+            </div>
+            <div class="virtue-item scroll-animate">
+                <h3 class="virtue-name">Temperance</h3>
+                <p class="virtue-description">
+                    Practicing self-control and moderation in all things, maintaining balance and avoiding excess in our desires and actions.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Daily Practices Section -->
+    <section class="practices-section" id="practices">
+        <h2 class="practices-title scroll-animate">DAILY PRACTICES</h2>
+        <div class="practices-grid">
+            <div class="practice-card scroll-animate">
+                <div class="practice-number">01</div>
+                <h3 class="practice-name">Morning Meditation</h3>
+                <p class="practice-description">
+                    Begin each day by contemplating what lies ahead. Prepare your mind for challenges, remind yourself of your principles, and set your intentions with clarity.
+                </p>
+                <p class="practice-tip">
+                    "When you wake up in the morning, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, dishonest, jealous and surly."
+                </p>
+            </div>
+            <div class="practice-card scroll-animate">
+                <div class="practice-number">02</div>
+                <h3 class="practice-name">Negative Visualization</h3>
+                <p class="practice-description">
+                    Imagine losing what you have to appreciate it more fully. This practice builds resilience and gratitude, reminding us that all things are temporary.
+                </p>
+                <p class="practice-tip">
+                    Consider what you would do if you lost your health, your loved ones, or your possessions. This makes you treasure them more.
+                </p>
+            </div>
+            <div class="practice-card scroll-animate">
+                <div class="practice-number">03</div>
+                <h3 class="practice-name">Evening Reflection</h3>
+                <p class="practice-description">
+                    Review your day before sleep. What did you do well? Where did you fall short? What can you improve tomorrow? Self-examination leads to growth.
+                </p>
+                <p class="practice-tip">
+                    "What bad habit have you cured today? What vice have you checked? In what respect are you better?"
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Section -->
+    <section class="final-section" id="wisdom">
+        <h2 class="final-text scroll-animate">
+            Live in accordance with nature
+        </h2>
+    </section>
+
+    <script>
+        // Initialize GSAP ScrollTrigger and ScrollToPlugin
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        // Three.js Animated Background
+        const canvas = document.getElementById('threejs-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.z = 50;
+
+        // Create particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 1000;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Create rotating geometry
+        const geometry = new THREE.TorusGeometry(10, 0.5, 16, 100);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.1
+        });
+        const torus = new THREE.Mesh(geometry, material);
+        scene.add(torus);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            torus.rotation.x += 0.001;
+            torus.rotation.y += 0.002;
+            
+            particlesMesh.rotation.x += 0.0001;
+            particlesMesh.rotation.y += 0.0002;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Function to create 3D model viewer
+        function create3DViewer(containerId, modelPath, scale = 1, yPosition = 0, cameraConfig = {}) {
+            const container = document.getElementById(containerId);
+            const loadingIndicator = container.querySelector('.loading-indicator');
+            
+            // Create scene
+            const viewerScene = new THREE.Scene();
+            viewerScene.background = new THREE.Color(0x000000);
+            
+            // Default camera config
+            const camX = cameraConfig.x || 0;
+            const camY = cameraConfig.y || 0.5;
+            const camZ = cameraConfig.z || 5;
+            const fov = cameraConfig.fov || 50;
+            
+            // Create camera
+            const viewerCamera = new THREE.PerspectiveCamera(
+                fov,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            viewerCamera.position.set(camX, camY, camZ);
+            
+            // Create renderer
+            const viewerRenderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true 
+            });
+            viewerRenderer.setSize(container.clientWidth, container.clientHeight);
+            viewerRenderer.setPixelRatio(window.devicePixelRatio);
+            viewerRenderer.shadowMap.enabled = true;
+            viewerRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            viewerRenderer.setClearColor(0x000000, 1);
+            container.appendChild(viewerRenderer.domElement);
+            
+            // Add lights - improved for better model visibility
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            viewerScene.add(ambientLight);
+            
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight1.position.set(5, 5, 5);
+            directionalLight1.castShadow = true;
+            viewerScene.add(directionalLight1);
+            
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            directionalLight2.position.set(-5, 5, -5);
+            viewerScene.add(directionalLight2);
+            
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            fillLight.position.set(0, -3, 3);
+            viewerScene.add(fillLight);
+            
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            backLight.position.set(0, 0, -5);
+            viewerScene.add(backLight);
+            
+            // Add OrbitControls
+            const controls = new THREE.OrbitControls(viewerCamera, viewerRenderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = false;
+            controls.enablePan = false;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+            controls.rotateSpeed = 0.5;
+            
+            // Set camera target if specified
+            if (cameraConfig.targetX !== undefined) {
+                controls.target.set(
+                    cameraConfig.targetX || 0,
+                    cameraConfig.targetY || 0,
+                    cameraConfig.targetZ || 0
+                );
+            }
+            
+            // Load GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                modelPath,
+                (gltf) => {
+                    const model = gltf.scene;
+                    
+                    // Apply rotation if specified
+                    if (cameraConfig.rotateX !== undefined) model.rotation.x = cameraConfig.rotateX;
+                    if (cameraConfig.rotateY !== undefined) model.rotation.y = cameraConfig.rotateY;
+                    if (cameraConfig.rotateZ !== undefined) model.rotation.z = cameraConfig.rotateZ;
+                    
+                    // Scale and position model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scaleFactor = (3 / maxDim) * scale;
+                    
+                    model.scale.setScalar(scaleFactor);
+                    model.position.sub(center.multiplyScalar(scaleFactor));
+                    model.position.y = yPosition;
+                    
+                    // Enable shadows
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Enhance material
+                            if (child.material) {
+                                child.material.metalness = 0.3;
+                                child.material.roughness = 0.6;
+                            }
+                        }
+                    });
+                    
+                    viewerScene.add(model);
+                    
+                    // Hide loading indicator
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'none';
+                    }
+                },
+                (xhr) => {
+                    const percentComplete = (xhr.loaded / xhr.total) * 100;
+                    if (loadingIndicator) {
+                        loadingIndicator.textContent = `LOADING ${Math.round(percentComplete)}%`;
+                    }
+                },
+                (error) => {
+                    if (loadingIndicator) {
+                        loadingIndicator.textContent = 'MODEL NOT FOUND';
+                        loadingIndicator.style.opacity = '0.5';
+                    }
+                }
+            );
+            
+            // Animation loop
+            function animateViewer() {
+                requestAnimationFrame(animateViewer);
+                controls.update();
+                viewerRenderer.render(viewerScene, viewerCamera);
+            }
+            animateViewer();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                viewerCamera.aspect = width / height;
+                viewerCamera.updateProjectionMatrix();
+                viewerRenderer.setSize(width, height);
+            });
+        }
+
+        // Initialize 3D model viewers with actual GLB models
+        create3DViewer('marcus-viewer', 'marcus_aurelius (1).glb', 1, 0);
+        create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0);
+        create3DViewer('seneca-viewer', 'nero_and_seneca.glb', 1.1, -0.3, { 
+            x: -0.3, 
+            y: 0.3, 
+            z: 5, 
+            fov: 48,
+            rotateY: -0.3
+        });
+
+        // Menu Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const fullscreenMenu = document.getElementById('fullscreenMenu');
+
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            fullscreenMenu.classList.toggle('active');
+            document.body.style.overflow = fullscreenMenu.classList.contains('active') ? 'hidden' : 'auto';
+        });
+
+        // Close menu when clicking on a link
+        document.querySelectorAll('.menu-items a').forEach(link => {
+            link.addEventListener('click', () => {
+                menuToggle.classList.remove('active');
+                fullscreenMenu.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        });
+
+        // GSAP Scroll Animations with smoother transitions
+        gsap.utils.toArray('.scroll-animate').forEach(element => {
+            gsap.from(element, {
+                scrollTrigger: {
+                    trigger: element,
+                    start: 'top 85%',
+                    end: 'bottom 20%',
+                    toggleActions: 'play none none reverse'
+                },
+                opacity: 0,
+                y: 50,
+                duration: 1.2,
+                ease: 'power2.out'
+            });
+        });
+
+        // Philosopher items with stagger
+        gsap.utils.toArray('.philosopher-item').forEach((item, index) => {
+            gsap.from(item, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 85%',
+                    end: 'bottom 20%',
+                },
+                opacity: 0,
+                y: 150,
+                duration: 1.2,
+                delay: index * 0.2,
+                ease: 'power3.out'
+            });
+        });
+
+        // Timeline items animation with stagger
+        const timelineSection = document.querySelector('.timeline-section');
+        const timelineProgress = document.getElementById('timelineProgress');
+        
+        // Animate timeline progress bar with smoother scrub
+        gsap.to(timelineProgress, {
+            scrollTrigger: {
+                trigger: timelineSection,
+                start: 'top center',
+                end: 'bottom center',
+                scrub: 2
+            },
+            height: '100%',
+            ease: 'none'
+        });
+
+        // Timeline items with smoother, gentler animations
+        gsap.utils.toArray('.timeline-item').forEach((item, index) => {
+            // Fade in and slide up with smoother easing
+            gsap.from(item, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 85%',
+                    end: 'bottom 20%',
+                    toggleActions: 'play none none reverse'
+                },
+                opacity: 0,
+                y: 60,
+                duration: 1.4,
+                ease: 'power2.out',
+                clearProps: 'all'
+            });
+
+            // Animate the timeline content specifically
+            const content = item.querySelector('.timeline-content');
+            if (content) {
+                gsap.from(content, {
+                    scrollTrigger: {
+                        trigger: item,
+                        start: 'top 80%',
+                    },
+                    scale: 0.95,
+                    duration: 1.2,
+                    ease: 'power1.out'
+                });
+            }
+        });
+
+        // Parallax effect on hero elements
+        gsap.to('.hero-title', {
+            scrollTrigger: {
+                trigger: '.hero',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            },
+            y: 300,
+            opacity: 0.5,
+            scale: 1.2
+        });
+
+        // Horizontal scroll animation
+        const horizontalSection = document.querySelector('.horizontal-section');
+        const horizontalWrapper = document.getElementById('horizontalWrapper');
+
+        gsap.to(horizontalWrapper, {
+            scrollTrigger: {
+                trigger: horizontalSection,
+                start: 'top top',
+                end: () => `+=${horizontalWrapper.scrollWidth}`,
+                scrub: 1,
+                pin: true,
+                anticipatePin: 1
+            },
+            x: () => -(horizontalWrapper.scrollWidth - window.innerWidth),
+            ease: 'none'
+        });
+
+        // Parallax circles
+        gsap.utils.toArray('.circle').forEach((circle, index) => {
+            gsap.to(circle, {
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: true
+                },
+                y: (index + 1) * 300,
+                rotation: 360,
+                ease: 'none'
+            });
+        });
+
+        // 3D cube rotation speed based on scroll
+        gsap.to('.cube', {
+            scrollTrigger: {
+                trigger: '.hero',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            },
+            rotation: 360,
+            ease: 'none'
+        });
+
+        // Practices cards floating animation
+        document.querySelectorAll('.practice-card').forEach((card, index) => {
+            gsap.to(card, {
+                y: -20,
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                ease: 'power1.inOut',
+                delay: index * 0.3
+            });
+        });
+
+        // Mouse parallax effect
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX / window.innerWidth - 0.5;
+            const mouseY = e.clientY / window.innerHeight - 0.5;
+            
+            // Move Three.js camera based on mouse
+            gsap.to(camera.position, {
+                x: mouseX * 5,
+                y: -mouseY * 5,
+                duration: 2,
+                ease: 'power2.out'
+            });
+
+            // Parallax on philosopher 3D viewers
+            document.querySelectorAll('.philosopher-3d-viewer').forEach((viewer, index) => {
+                const rect = viewer.getBoundingClientRect();
+                const viewerX = rect.left + rect.width / 2;
+                const viewerY = rect.top + rect.height / 2;
+                
+                if (Math.abs(e.clientX - viewerX) < 400 && Math.abs(e.clientY - viewerY) < 400) {
+                    const moveX = (e.clientX - viewerX) / 50;
+                    const moveY = (e.clientY - viewerY) / 50;
+                    
+                    gsap.to(viewer, {
+                        x: moveX,
+                        y: moveY,
+                        duration: 0.5,
+                        ease: 'power2.out'
+                    });
+                }
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    gsap.to(window, {
+                        scrollTo: {
+                            y: target,
+                            autoKill: true
+                        },
+                        duration: 1.5,
+                        ease: 'power3.inOut'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for visibility classes
+        const observerOptions = {
+            threshold: 0.2,
+            rootMargin: '0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements
+        document.querySelectorAll('.scroll-animate, .philosopher-item, .timeline-item, .virtue-item, .practice-card').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Text glitch effect on hover
+        document.querySelectorAll('.big-text, .philosophers-title, .virtues-title, .practices-title').forEach(text => {
+            text.addEventListener('mouseenter', () => {
+                gsap.to(text, {
+                    textShadow: '3px 3px rgba(255,255,255,0.3), -3px -3px rgba(255,255,255,0.3)',
+                    duration: 0.1
+                });
+            });
+            text.addEventListener('mouseleave', () => {
+                gsap.to(text, {
+                    textShadow: 'none',
+                    duration: 0.3
+                });
+            });
+        });
+
+        // Loading animation
+        window.addEventListener('load', () => {
+            gsap.from('body', {
+                opacity: 0,
+                duration: 1,
+                ease: 'power2.inOut'
+            });
+        });
+
+        // Stoic Figure Interactive Animation with Anime.js
+        const stoicFigure = document.getElementById('stoicFigure');
+        let figureAnimationRunning = false;
+
+        if (stoicFigure) {
+            // Continuous subtle animation for aura circles
+            anime({
+                targets: '.stoic-aura',
+                strokeDashoffset: [anime.setDashoffset, 0],
+                easing: 'linear',
+                duration: 15000,
+                loop: true,
+                direction: 'normal'
+            });
+
+            // Continuous compass rotation
+            anime({
+                targets: '.stoic-compass',
+                opacity: [0.2, 0.5, 0.2],
+                duration: 3000,
+                easing: 'easeInOutSine',
+                loop: true,
+                delay: anime.stagger(200)
+            });
+
+            // Hover animation - complex interaction
+            stoicFigure.addEventListener('mouseenter', () => {
+                if (figureAnimationRunning) return;
+                figureAnimationRunning = true;
+
+                // Head pulsate
+                anime({
+                    targets: '#stoic-head',
+                    r: [80, 85, 80],
+                    opacity: [0.8, 1, 0.8],
+                    duration: 1500,
+                    easing: 'easeInOutQuad'
+                });
+
+                // Arms wave
+                anime({
+                    targets: '#stoic-arm-left',
+                    x2: [280, 260, 280],
+                    y2: [500, 480, 500],
+                    duration: 1000,
+                    easing: 'easeInOutElastic(1, .6)'
+                });
+
+                anime({
+                    targets: '#stoic-arm-right',
+                    x2: [520, 540, 520],
+                    y2: [500, 480, 500],
+                    duration: 1000,
+                    easing: 'easeInOutElastic(1, .6)'
+                });
+
+                // Body expand
+                anime({
+                    targets: '#stoic-body',
+                    width: [120, 130, 120],
+                    x: [340, 335, 340],
+                    duration: 1200,
+                    easing: 'easeInOutQuad'
+                });
+
+                // Aura expand
+                anime({
+                    targets: '#aura-1',
+                    r: [250, 280, 250],
+                    opacity: [0.2, 0.4, 0.2],
+                    duration: 1500,
+                    easing: 'easeInOutQuad'
+                });
+
+                anime({
+                    targets: '#aura-2',
+                    r: [300, 340, 300],
+                    opacity: [0.1, 0.3, 0.1],
+                    duration: 1500,
+                    easing: 'easeInOutQuad'
+                });
+
+                // Compass lines extend
+                anime({
+                    targets: '.stoic-compass',
+                    opacity: [0.3, 0.8, 0.3],
+                    strokeWidth: [2, 4, 2],
+                    duration: 1200,
+                    delay: anime.stagger(100),
+                    easing: 'easeInOutQuad',
+                    complete: () => {
+                        figureAnimationRunning = false;
+                    }
+                });
+
+                // Legs subtle movement
+                anime({
+                    targets: '.stoic-leg',
+                    opacity: [0.8, 1, 0.8],
+                    duration: 1000,
+                    easing: 'easeInOutSine'
+                });
+            });
+
+            // Click animation - dramatic effect
+            stoicFigure.addEventListener('click', () => {
+                // Explosive aura effect
+                anime({
+                    targets: '.stoic-aura',
+                    r: ['+= 50'],
+                    opacity: [0.5, 0],
+                    duration: 1000,
+                    easing: 'easeOutExpo',
+                    complete: () => {
+                        anime.set('.stoic-aura', { r: 250, opacity: 0.2 });
+                        anime.set('#aura-2', { r: 300, opacity: 0.1 });
+                    }
+                });
+
+                // Figure shake
+                anime({
+                    targets: stoicFigure,
+                    translateX: [
+                        { value: 10, duration: 50 },
+                        { value: -10, duration: 50 },
+                        { value: 10, duration: 50 },
+                        { value: -10, duration: 50 },
+                        { value: 0, duration: 50 }
+                    ],
+                    easing: 'easeInOutSine'
+                });
+
+                // Compass burst
+                anime({
+                    targets: '.stoic-compass',
+                    opacity: [0.3, 1, 0],
+                    scale: [1, 1.5, 1],
+                    duration: 800,
+                    delay: anime.stagger(50),
+                    easing: 'easeOutExpo',
+                    complete: () => {
+                        anime.set('.stoic-compass', { opacity: 0.3, scale: 1 });
+                    }
+                });
+            });
+        }
+
+        // Scroll indicator fade
+        gsap.to('.scroll-indicator', {
+            scrollTrigger: {
+                trigger: '.hero',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            },
+            opacity: 0,
+            y: 50
+        });
+
+        // Enhanced Parallax Effects
+        // Philosopher sections parallax
+        document.querySelectorAll('.philosopher-item').forEach((item, index) => {
+            const viewer = item.querySelector('.philosopher-3d-viewer');
+            const info = item.querySelector('.philosopher-info');
+            
+            if (viewer) {
+                gsap.to(viewer, {
+                    scrollTrigger: {
+                        trigger: item,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1
+                    },
+                    y: -50,
+                    ease: 'none'
+                });
+            }
+            
+            if (info) {
+                gsap.to(info, {
+                    scrollTrigger: {
+                        trigger: item,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1
+                    },
+                    y: 50,
+                    ease: 'none'
+                });
+            }
+        });
+
+        // Big text parallax
+        document.querySelectorAll('.big-text').forEach(text => {
+            gsap.to(text, {
+                scrollTrigger: {
+                    trigger: text,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 2
+                },
+                x: -100,
+                ease: 'none'
+            });
+        });
+
+        // Quote section parallax
+        gsap.to('.quote', {
+            scrollTrigger: {
+                trigger: '.quote-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 1.5
+            },
+            y: -80,
+            scale: 1.1,
+            ease: 'none'
+        });
+
+        // Virtue cards parallax
+        document.querySelectorAll('.virtue-item').forEach((item, index) => {
+            gsap.to(item, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 1
+                },
+                y: (index % 2 === 0) ? -30 : 30,
+                ease: 'none'
+            });
+        });
+
+        // Practice cards parallax with rotation
+        document.querySelectorAll('.practice-card').forEach((card, index) => {
+            gsap.to(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 2
+                },
+                y: -40,
+                rotateZ: (index % 2 === 0) ? 2 : -2,
+                ease: 'none'
+            });
+        });
+
+        // Stoic illustration parallax
+        gsap.to('.stoic-illustration', {
+            scrollTrigger: {
+                trigger: '.illustration-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 1.5
+            },
+            y: -60,
+            rotate: 5,
+            ease: 'none'
+        });
+
+        // Advanced mouse parallax with depth
+        let mouseX = 0;
+        let mouseY = 0;
+        let currentX = 0;
+        let currentY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        // Smooth mouse parallax animation
+        function animateParallax() {
+            currentX += (mouseX - currentX) * 0.05;
+            currentY += (mouseY - currentY) * 0.05;
+
+            // Apply to various elements with different intensities
+            document.querySelectorAll('.philosopher-info').forEach(el => {
+                gsap.to(el, {
+                    x: currentX * 20,
+                    y: currentY * 20,
+                    duration: 0.5,
+                    ease: 'power1.out'
+                });
+            });
+
+            document.querySelectorAll('.circle').forEach((circle, index) => {
+                const intensity = (index + 1) * 15;
+                gsap.to(circle, {
+                    x: currentX * intensity,
+                    y: currentY * intensity,
+                    duration: 0.8,
+                    ease: 'power1.out'
+                });
+            });
+
+            document.querySelectorAll('.big-text').forEach(text => {
+                gsap.to(text, {
+                    x: currentX * 10,
+                    y: currentY * 10,
+                    duration: 0.6,
+                    ease: 'power1.out'
+                });
+            });
+
+            requestAnimationFrame(animateParallax);
+        }
+        animateParallax();
+
+        // Section-specific interactive effects
+        const philosophySection = document.querySelector('.philosophy-section');
+        if (philosophySection) {
+            philosophySection.addEventListener('mousemove', (e) => {
+                const rect = philosophySection.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width - 0.5) * 100;
+                const y = ((e.clientY - rect.top) / rect.height - 0.5) * 100;
+                
+                philosophySection.style.background = `radial-gradient(circle at ${50 + x/5}% ${50 + y/5}%, rgba(20,20,20,1), rgba(10,10,10,1))`;
+            });
+        }
+
+        // Virtue section interactive background
+        const virtuesSection = document.querySelector('.virtues-section');
+        if (virtuesSection) {
+            virtuesSection.addEventListener('mousemove', (e) => {
+                const rect = virtuesSection.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                
+                virtuesSection.style.background = `radial-gradient(circle at ${x}% ${y}%, rgba(25,25,25,1), rgba(15,15,15,1))`;
+            });
+        }
+
+        // Add particle effect on mousemove
+        const hero = document.querySelector('.hero');
+        if (hero) {
+            hero.addEventListener('click', (e) => {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '4px';
+                particle.style.height = '4px';
+                particle.style.background = 'white';
+                particle.style.borderRadius = '50%';
+                particle.style.left = e.clientX + 'px';
+                particle.style.top = e.clientY + 'px';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '1000';
+                hero.appendChild(particle);
+
+                anime({
+                    targets: particle,
+                    translateX: () => anime.random(-200, 200),
+                    translateY: () => anime.random(-200, 200),
+                    scale: [1, 0],
+                    opacity: [1, 0],
+                    duration: 1500,
+                    easing: 'easeOutExpo',
+                    complete: () => particle.remove()
+                });
+            });
+        }
+
+        // Custom Cursor
+        const cursor = document.getElementById('customCursor');
+        const cursorDot = document.getElementById('customCursorDot');
+        let cursorX = 0;
+        let cursorY = 0;
+        let dotX = 0;
+        let dotY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            cursorX = e.clientX;
+            cursorY = e.clientY;
+            
+            // Instant update for dot
+            cursorDot.style.left = cursorX + 'px';
+            cursorDot.style.top = cursorY + 'px';
+        });
+
+        // Smooth cursor follow animation
+        function animateCursor() {
+            const diffX = cursorX - parseFloat(cursor.style.left || 0);
+            const diffY = cursorY - parseFloat(cursor.style.top || 0);
+            
+            dotX += diffX * 0.2;
+            dotY += diffY * 0.2;
+            
+            cursor.style.left = cursorX - diffX * 0.8 + 'px';
+            cursor.style.top = cursorY - diffY * 0.8 + 'px';
+            
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Cursor hover effects
+        const interactiveElements = document.querySelectorAll('a, button, .menu-toggle, .stoic-illustration, .philosopher-3d-viewer, .practice-card, .virtue-item, .timeline-content');
+        
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.style.width = '40px';
+                cursor.style.height = '40px';
+                cursor.style.borderColor = 'rgba(255, 255, 255, 1)';
+            });
+            
+            el.addEventListener('mouseleave', () => {
+                cursor.style.width = '20px';
+                cursor.style.height = '20px';
+                cursor.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+            });
+        });
+
+        // Title click effects
+        document.querySelectorAll('.philosophers-title, .virtues-title, .practices-title, .timeline-title').forEach(title => {
+            title.addEventListener('click', () => {
+                // Create ripple effect
+                for (let i = 0; i < 3; i++) {
+                    const ripple = document.createElement('div');
+                    ripple.style.position = 'absolute';
+                    ripple.style.left = '50%';
+                    ripple.style.top = '50%';
+                    ripple.style.transform = 'translate(-50%, -50%)';
+                    ripple.style.width = '0px';
+                    ripple.style.height = '0px';
+                    ripple.style.border = '2px solid white';
+                    ripple.style.borderRadius = '50%';
+                    ripple.style.pointerEvents = 'none';
+                    ripple.style.opacity = '1';
+                    title.style.position = 'relative';
+                    title.appendChild(ripple);
+
+                    anime({
+                        targets: ripple,
+                        width: '200%',
+                        height: '200%',
+                        opacity: 0,
+                        duration: 1500,
+                        delay: i * 200,
+                        easing: 'easeOutExpo',
+                        complete: () => ripple.remove()
+                    });
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>

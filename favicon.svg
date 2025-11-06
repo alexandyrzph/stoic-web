@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Black rounded rectangle background -->
+  <rect width="512" height="512" rx="60" ry="60" fill="#0a0a0a"/>
+  
+  <!-- Letter S in Georgia font, perfectly centered -->
+  <text 
+    x="256" 
+    y="256" 
+    font-family="Georgia, serif" 
+    font-size="420" 
+    font-weight="900" 
+    text-anchor="middle" 
+    dominant-baseline="central"
+    fill="#ffffff"
+    letter-spacing="-0.05em">S</text>
+</svg>
+
