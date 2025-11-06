@@ -27,20 +27,69 @@
             cursor: none;
         }
 
-        /* Prevent layout shift on load */
-        body.loading * {
-            animation-play-state: paused !important;
-            transition: none !important;
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
 
-        /* Smooth page reveal */
-        body.loading {
+        .loading-screen.hidden {
             opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-percentage {
+            font-size: clamp(60px, 12vw, 120px);
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 30px;
+            font-family: 'Georgia', serif;
+            letter-spacing: -0.05em;
+        }
+
+        .loading-bar-container {
+            width: 400px;
+            max-width: 80vw;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-bar {
+            height: 100%;
+            background: #ffffff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            color: #ffffff;
+        }
+
+        /* Prevent layout shift on load */
+        body.loading {
+            overflow: hidden;
         }
 
         body.loaded {
-            opacity: 1;
-            transition: opacity 0.5s ease;
+            overflow-x: hidden;
         }
 
         /* Text Selection Styles */
@@ -1534,6 +1583,15 @@
     </style>
 </head>
 <body class="loading">
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-percentage" id="loadingPercentage">0%</div>
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <div class="loading-text" id="loadingText">Loading Ancient Wisdom...</div>
+    </div>
+
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor"></div>
     <div class="custom-cursor-dot" id="customCursorDot"></div>
@@ -1874,6 +1932,87 @@
     </section>
 
     <script>
+        // Loading Progress Tracker
+        const loadingManager = {
+            total: 0,
+            loaded: 0,
+            percentage: 0,
+            models: {},
+            
+            init() {
+                this.updateProgress(0);
+            },
+            
+            addModel(name, total = 100) {
+                this.models[name] = { loaded: 0, total: total };
+                this.total += total;
+            },
+            
+            updateModel(name, loaded) {
+                if (this.models[name]) {
+                    const prev = this.models[name].loaded;
+                    this.models[name].loaded = loaded;
+                    this.loaded += (loaded - prev);
+                    this.calculate();
+                }
+            },
+            
+            calculate() {
+                if (this.total > 0) {
+                    this.percentage = Math.min(Math.round((this.loaded / this.total) * 100), 100);
+                    this.updateProgress(this.percentage);
+                }
+            },
+            
+            updateProgress(percent) {
+                const percentageEl = document.getElementById('loadingPercentage');
+                const barEl = document.getElementById('loadingBar');
+                const textEl = document.getElementById('loadingText');
+                
+                if (percentageEl) percentageEl.textContent = percent + '%';
+                if (barEl) barEl.style.width = percent + '%';
+                
+                // Update text based on progress
+                if (textEl) {
+                    if (percent < 30) {
+                        textEl.textContent = 'Loading Ancient Wisdom...';
+                    } else if (percent < 60) {
+                        textEl.textContent = 'Summoning Philosophers...';
+                    } else if (percent < 90) {
+                        textEl.textContent = 'Preparing Experience...';
+                    } else if (percent < 100) {
+                        textEl.textContent = 'Almost Ready...';
+                    } else {
+                        textEl.textContent = 'Welcome';
+                    }
+                }
+            },
+            
+            complete() {
+                this.updateProgress(100);
+                setTimeout(() => {
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) {
+                        loadingScreen.classList.add('hidden');
+                    }
+                    document.body.classList.remove('loading');
+                    document.body.classList.add('loaded');
+                }, 500);
+            }
+        };
+        
+        // Initialize loading manager
+        loadingManager.init();
+        
+        // Track page resources
+        let resourcesLoaded = 0;
+        let totalResources = document.images.length + 
+                             document.querySelectorAll('script').length + 
+                             document.querySelectorAll('link[rel="stylesheet"]').length;
+        
+        // Add base resources to loading
+        loadingManager.addModel('resources', totalResources || 10);
+
         // Initialize GSAP ScrollTrigger and ScrollToPlugin
         gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
@@ -1941,6 +2080,9 @@
         function create3DViewer(containerId, modelPath, scale = 1, yPosition = 0, cameraConfig = {}) {
             const container = document.getElementById(containerId);
             const loadingIndicator = container.querySelector('.loading-indicator');
+            
+            // Add this model to loading manager
+            loadingManager.addModel(containerId, 100);
             
             // Create scene
             const viewerScene = new THREE.Scene();
@@ -2061,11 +2203,18 @@
                         loadingIndicator.style.display = 'none';
                     }
                     container.classList.add('loaded');
+                    
+                    // Update loading manager - model fully loaded
+                    loadingManager.updateModel(containerId, 100);
                 },
                 (xhr) => {
                     if (xhr.lengthComputable) {
                         const percentComplete = (xhr.loaded / xhr.total) * 100;
                         console.log(`${modelPath}: ${Math.round(percentComplete)}% loaded`);
+                        
+                        // Update loading manager with progress
+                        loadingManager.updateModel(containerId, percentComplete);
+                        
                         if (loadingIndicator) {
                             loadingIndicator.textContent = `LOADING ${Math.round(percentComplete)}%`;
                         }
@@ -2370,23 +2519,48 @@
             });
         });
 
-        // Loading animation - prevent layout shift
+        // Track resources loading
+        let checkInterval = setInterval(() => {
+            if (resourcesLoaded < totalResources) {
+                resourcesLoaded++;
+                loadingManager.updateModel('resources', (resourcesLoaded / totalResources) * 100);
+            }
+        }, 100);
+
+        // Loading animation - complete when everything is loaded
         window.addEventListener('load', () => {
-            // Small delay to ensure all resources are ready
+            clearInterval(checkInterval);
+            // Mark resources as fully loaded
+            loadingManager.updateModel('resources', 100);
+            
+            // Small delay to ensure all 3D models are ready
             setTimeout(() => {
-                document.body.classList.remove('loading');
-                document.body.classList.add('loaded');
-            }, 100);
+                // Check if all models are loaded
+                let allModelsLoaded = true;
+                for (let modelName in loadingManager.models) {
+                    if (modelName !== 'resources' && loadingManager.models[modelName].loaded < 100) {
+                        allModelsLoaded = false;
+                        break;
+                    }
+                }
+                
+                // Complete loading
+                if (allModelsLoaded || loadingManager.percentage >= 90) {
+                    loadingManager.complete();
+                } else {
+                    // Wait a bit more for models
+                    setTimeout(() => loadingManager.complete(), 1500);
+                }
+            }, 500);
         });
 
         // Fallback in case load event doesn't fire
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (document.body.classList.contains('loading')) {
-                    document.body.classList.remove('loading');
-                    document.body.classList.add('loaded');
+                    loadingManager.complete();
                 }
-            }, 2000);
+            }, 8000); // Give models time to load
         });
 
         // Stoic Figure Interactive Animation with Anime.js
