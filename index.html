@@ -50,37 +50,23 @@
         }
 
         .loading-percentage {
-            font-size: clamp(60px, 12vw, 120px);
+            font-size: clamp(80px, 15vw, 180px);
             font-weight: 900;
             color: #ffffff;
-            margin-bottom: 30px;
             font-family: 'Georgia', serif;
             letter-spacing: -0.05em;
         }
 
         .loading-bar-container {
-            width: 400px;
-            max-width: 80vw;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
+            display: none;
         }
 
         .loading-bar {
-            height: 100%;
-            background: #ffffff;
-            width: 0%;
-            transition: width 0.3s ease;
+            display: none;
         }
 
         .loading-text {
-            margin-top: 30px;
-            font-size: 14px;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            opacity: 0.5;
-            color: #ffffff;
+            display: none;
         }
 
         /* Prevent layout shift on load */
@@ -1966,26 +1952,7 @@
             
             updateProgress(percent) {
                 const percentageEl = document.getElementById('loadingPercentage');
-                const barEl = document.getElementById('loadingBar');
-                const textEl = document.getElementById('loadingText');
-                
                 if (percentageEl) percentageEl.textContent = percent + '%';
-                if (barEl) barEl.style.width = percent + '%';
-                
-                // Update text based on progress
-                if (textEl) {
-                    if (percent < 30) {
-                        textEl.textContent = 'Loading Ancient Wisdom...';
-                    } else if (percent < 60) {
-                        textEl.textContent = 'Summoning Philosophers...';
-                    } else if (percent < 90) {
-                        textEl.textContent = 'Preparing Experience...';
-                    } else if (percent < 100) {
-                        textEl.textContent = 'Almost Ready...';
-                    } else {
-                        textEl.textContent = 'Welcome';
-                    }
-                }
             },
             
             complete() {
