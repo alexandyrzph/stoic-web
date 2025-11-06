@@ -294,9 +294,12 @@
             text-align: center;
             opacity: 0;
             transform: translateY(50px);
-            animation: fadeInUp 1.5s ease forwards;
             position: relative;
             z-index: 2;
+        }
+
+        .hero-title.animate {
+            animation: fadeInUp 1.5s ease forwards;
         }
 
         .hero-subtitle {
@@ -306,8 +309,11 @@
             letter-spacing: 0.3em;
             text-transform: uppercase;
             opacity: 0;
-            animation: fadeInUp 1.5s ease 0.5s forwards;
             z-index: 2;
+        }
+
+        .hero-subtitle.animate {
+            animation: fadeInUp 1.5s ease 0.5s forwards;
         }
 
         /* 3D Rotating Cube Background */
@@ -317,6 +323,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             perspective: 1000px;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .cube-container.animate {
+            opacity: 0.5;
         }
 
         .cube {
@@ -352,6 +364,12 @@
             position: absolute;
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .circle.animate {
+            opacity: 1;
             animation: float 20s infinite ease-in-out;
         }
 
@@ -1421,6 +1439,11 @@
             font-size: 14px;
             letter-spacing: 0.2em;
             text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .scroll-indicator.animate {
             opacity: 0.5;
             animation: bounce 2s infinite;
         }
@@ -1964,6 +1987,26 @@
                     }
                     document.body.classList.remove('loading');
                     document.body.classList.add('loaded');
+                    
+                    // Trigger hero animations after loading screen fades
+                    setTimeout(() => {
+                        const heroTitle = document.querySelector('.hero-title');
+                        const heroSubtitle = document.querySelector('.hero-subtitle');
+                        const cubeContainer = document.querySelector('.cube-container');
+                        const circles = document.querySelectorAll('.circle');
+                        const scrollIndicator = document.querySelector('.scroll-indicator');
+                        
+                        if (heroTitle) heroTitle.classList.add('animate');
+                        if (heroSubtitle) heroSubtitle.classList.add('animate');
+                        if (cubeContainer) cubeContainer.classList.add('animate');
+                        if (scrollIndicator) scrollIndicator.classList.add('animate');
+                        
+                        circles.forEach((circle, index) => {
+                            setTimeout(() => {
+                                circle.classList.add('animate');
+                            }, index * 200); // Stagger circle animations
+                        });
+                    }, 300); // Start animations 300ms after loading screen begins fading
                 }, 500);
             }
         };
