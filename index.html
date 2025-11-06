@@ -27,6 +27,41 @@
             cursor: none;
         }
 
+        /* Text Selection Styles */
+        ::selection {
+            background: #ffffff;
+            color: #000000;
+            text-shadow: none;
+        }
+
+        ::-moz-selection {
+            background: #ffffff;
+            color: #000000;
+            text-shadow: none;
+        }
+
+        /* Inverted selection for light backgrounds */
+        .menu-items ::selection,
+        .quote ::selection,
+        .hero-title ::selection {
+            background: rgba(255, 255, 255, 0.95);
+            color: #000000;
+        }
+
+        /* Subtle selection for interactive elements */
+        .philosopher-quote ::selection,
+        .practice-tip ::selection {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0a0a0a;
+        }
+
+        /* Menu selection with slight transparency */
+        .fullscreen-menu ::selection {
+            background: #ffffff;
+            color: #000000;
+            text-shadow: none;
+        }
+
         /* Custom Cursor */
         .custom-cursor {
             width: 20px;
