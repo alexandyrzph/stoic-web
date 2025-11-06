@@ -17,6 +17,13 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            scroll-behavior: smooth;
         }
 
         body {
@@ -25,6 +32,9 @@
             color: #ffffff;
             overflow-x: hidden;
             cursor: none;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none;
+            touch-action: pan-y;
         }
 
         /* Loading Screen */
@@ -419,6 +429,9 @@
             padding: 150px 50px;
             position: relative;
             transition: background 0.3s ease;
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .philosophy-content {
@@ -432,7 +445,9 @@
             line-height: 1.1;
             margin-bottom: 50px;
             opacity: 0;
-            transform: translateX(-100px);
+            transform: translateX(-100px) translateZ(0);
+            will-change: transform, opacity;
+            backface-visibility: hidden;
         }
 
         .big-text.visible {
@@ -494,9 +509,11 @@
             align-items: center;
             min-height: 600px;
             opacity: 0;
-            transform: translateY(100px);
+            transform: translateY(100px) translateZ(0);
             position: relative;
             will-change: transform, opacity;
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         /* Add extra padding/blending for smooth container integration */
@@ -2025,6 +2042,25 @@
 
         // Initialize GSAP ScrollTrigger and ScrollToPlugin
         gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+        
+        // Configure ScrollTrigger for smooth mobile scrolling
+        ScrollTrigger.config({
+            limitCallbacks: true,
+            syncInterval: 50, // Sync with scroll events less frequently on mobile
+            autoRefreshEvents: "visibilitychange,DOMContentLoaded,load"
+        });
+        
+        // Detect mobile and configure accordingly
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            // Disable custom cursor on mobile
+            document.body.style.cursor = 'auto';
+            const customCursors = document.querySelectorAll('.custom-cursor, .custom-cursor-dot');
+            customCursors.forEach(c => c.style.display = 'none');
+        }
+        
+        // Use requestAnimationFrame for smoother updates
+        gsap.ticker.lagSmoothing(0);
 
         // Three.js Animated Background
         const canvas = document.getElementById('threejs-canvas');
@@ -2301,12 +2337,16 @@
                     trigger: element,
                     start: 'top 85%',
                     end: 'bottom 20%',
-                    toggleActions: 'play none none reverse'
+                    toggleActions: 'play none none reverse',
+                    fastScrollEnd: true,
+                    preventOverlaps: true
                 },
                 opacity: 0,
                 y: 50,
                 duration: 1.2,
-                ease: 'power2.out'
+                ease: 'power2.out',
+                force3D: true,
+                transformOrigin: "50% 50%"
             });
         });
 
@@ -2317,12 +2357,15 @@
                     trigger: item,
                     start: 'top 85%',
                     end: 'bottom 20%',
+                    fastScrollEnd: true,
+                    preventOverlaps: true
                 },
                 opacity: 0,
                 y: 150,
                 duration: 1.2,
                 delay: index * 0.2,
-                ease: 'power3.out'
+                ease: 'power3.out',
+                force3D: true
             });
         });
 
@@ -2336,10 +2379,12 @@
                 trigger: timelineSection,
                 start: 'top center',
                 end: 'bottom center',
-                scrub: 2
+                scrub: isMobile ? 1 : 2,
+                fastScrollEnd: true
             },
             height: '100%',
-            ease: 'none'
+            ease: 'none',
+            force3D: true
         });
 
         // Timeline items with smoother, gentler animations
@@ -2396,28 +2441,35 @@
                 trigger: horizontalSection,
                 start: 'top top',
                 end: () => `+=${horizontalWrapper.scrollWidth}`,
-                scrub: 1,
+                scrub: isMobile ? 0.5 : 1,
                 pin: true,
-                anticipatePin: 1
+                anticipatePin: 1,
+                fastScrollEnd: true,
+                refreshPriority: -1
             },
             x: () => -(horizontalWrapper.scrollWidth - window.innerWidth),
-            ease: 'none'
+            ease: 'none',
+            force3D: true
         });
 
-        // Parallax circles
-        gsap.utils.toArray('.circle').forEach((circle, index) => {
-            gsap.to(circle, {
-                scrollTrigger: {
-                    trigger: 'body',
-                    start: 'top top',
-                    end: 'bottom bottom',
-                    scrub: true
-                },
-                y: (index + 1) * 300,
-                rotation: 360,
-                ease: 'none'
+        // Parallax circles - reduced effect on mobile
+        if (!isMobile) {
+            gsap.utils.toArray('.circle').forEach((circle, index) => {
+                gsap.to(circle, {
+                    scrollTrigger: {
+                        trigger: 'body',
+                        start: 'top top',
+                        end: 'bottom bottom',
+                        scrub: 1,
+                        fastScrollEnd: true
+                    },
+                    y: (index + 1) * 300,
+                    rotation: 360,
+                    ease: 'none',
+                    force3D: true
+                });
             });
-        });
+        }
 
         // 3D cube rotation speed based on scroll
         gsap.to('.cube', {
@@ -2443,38 +2495,40 @@
             });
         });
 
-        // Mouse parallax effect
-        document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX / window.innerWidth - 0.5;
-            const mouseY = e.clientY / window.innerHeight - 0.5;
-            
-            // Move Three.js camera based on mouse
-            gsap.to(camera.position, {
-                x: mouseX * 5,
-                y: -mouseY * 5,
-                duration: 2,
-                ease: 'power2.out'
-            });
-
-            // Parallax on philosopher 3D viewers
-            document.querySelectorAll('.philosopher-3d-viewer').forEach((viewer, index) => {
-                const rect = viewer.getBoundingClientRect();
-                const viewerX = rect.left + rect.width / 2;
-                const viewerY = rect.top + rect.height / 2;
+        // Mouse parallax effect - disabled on mobile for better performance
+        if (!isMobile) {
+            document.addEventListener('mousemove', (e) => {
+                const mouseX = e.clientX / window.innerWidth - 0.5;
+                const mouseY = e.clientY / window.innerHeight - 0.5;
                 
-                if (Math.abs(e.clientX - viewerX) < 400 && Math.abs(e.clientY - viewerY) < 400) {
-                    const moveX = (e.clientX - viewerX) / 50;
-                    const moveY = (e.clientY - viewerY) / 50;
+                // Move Three.js camera based on mouse
+                gsap.to(camera.position, {
+                    x: mouseX * 5,
+                    y: -mouseY * 5,
+                    duration: 2,
+                    ease: 'power2.out'
+                });
+
+                // Parallax on philosopher 3D viewers
+                document.querySelectorAll('.philosopher-3d-viewer').forEach((viewer, index) => {
+                    const rect = viewer.getBoundingClientRect();
+                    const viewerX = rect.left + rect.width / 2;
+                    const viewerY = rect.top + rect.height / 2;
                     
-                    gsap.to(viewer, {
-                        x: moveX,
-                        y: moveY,
-                        duration: 0.5,
-                        ease: 'power2.out'
-                    });
-                }
-            });
-        });
+                    if (Math.abs(e.clientX - viewerX) < 400 && Math.abs(e.clientY - viewerY) < 400) {
+                        const moveX = (e.clientX - viewerX) / 50;
+                        const moveY = (e.clientY - viewerY) / 50;
+                        
+                        gsap.to(viewer, {
+                            x: moveX,
+                            y: moveY,
+                            duration: 0.5,
+                            ease: 'power2.out'
+                        });
+                    }
+                });
+            }, { passive: true });
+        }
 
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
