@@ -1963,9 +1963,12 @@
             
             // Load GLB model
             const loader = new THREE.GLTFLoader();
+            console.log(`Loading model: ${modelPath}`);
+            
             loader.load(
                 modelPath,
                 (gltf) => {
+                    console.log(`Model loaded successfully: ${modelPath}`);
                     const model = gltf.scene;
                     
                     // Apply rotation if specified
@@ -2007,15 +2010,25 @@
                     }
                 },
                 (xhr) => {
-                    const percentComplete = (xhr.loaded / xhr.total) * 100;
-                    if (loadingIndicator) {
-                        loadingIndicator.textContent = `LOADING ${Math.round(percentComplete)}%`;
+                    if (xhr.lengthComputable) {
+                        const percentComplete = (xhr.loaded / xhr.total) * 100;
+                        console.log(`${modelPath}: ${Math.round(percentComplete)}% loaded`);
+                        if (loadingIndicator) {
+                            loadingIndicator.textContent = `LOADING ${Math.round(percentComplete)}%`;
+                        }
+                    } else {
+                        console.log(`${modelPath}: Loading... (${(xhr.loaded / 1024 / 1024).toFixed(2)}MB)`);
+                        if (loadingIndicator) {
+                            loadingIndicator.textContent = `LOADING... ${(xhr.loaded / 1024 / 1024).toFixed(1)}MB`;
+                        }
                     }
                 },
                 (error) => {
+                    console.error(`Error loading model ${modelPath}:`, error);
                     if (loadingIndicator) {
-                        loadingIndicator.textContent = 'MODEL NOT FOUND';
+                        loadingIndicator.textContent = 'FAILED TO LOAD';
                         loadingIndicator.style.opacity = '0.5';
+                        loadingIndicator.style.color = '#ff6b6b';
                     }
                 }
             );
@@ -2040,7 +2053,7 @@
         }
 
         // Initialize 3D model viewers with actual GLB models
-        create3DViewer('marcus-viewer', 'marcus_aurelius (1).glb', 1, 0);
+        create3DViewer('marcus-viewer', 'marcus_aurelius.glb', 1, 0);
         create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0);
         create3DViewer('seneca-viewer', 'nero_and_seneca.glb', 1.1, -0.3, { 
             x: -0.3, 
