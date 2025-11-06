@@ -27,6 +27,22 @@
             cursor: none;
         }
 
+        /* Prevent layout shift on load */
+        body.loading * {
+            animation-play-state: paused !important;
+            transition: none !important;
+        }
+
+        /* Smooth page reveal */
+        body.loading {
+            opacity: 0;
+        }
+
+        body.loaded {
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
         /* Text Selection Styles */
         ::selection {
             background: #ffffff;
@@ -227,11 +243,13 @@
         /* Hero Section */
         .hero {
             height: 100vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
+            contain: layout;
         }
 
         .hero-title {
@@ -421,9 +439,11 @@
             gap: 80px;
             margin-bottom: 200px;
             align-items: center;
+            min-height: 600px;
             opacity: 0;
             transform: translateY(100px);
             position: relative;
+            will-change: transform, opacity;
         }
 
         /* Add extra padding/blending for smooth container integration */
@@ -464,12 +484,15 @@
         .philosopher-3d-viewer {
             width: 100%;
             height: 600px;
+            min-height: 600px;
+            aspect-ratio: 1 / 1;
             background: transparent;
             position: relative;
             overflow: visible;
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: grab;
             z-index: 1;
+            contain: layout style paint;
         }
 
         .philosopher-3d-viewer:active {
@@ -479,6 +502,9 @@
         .philosopher-3d-viewer canvas {
             width: 100% !important;
             height: 100% !important;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         .philosopher-3d-viewer:hover {
@@ -685,6 +711,32 @@
             opacity: 0.3;
             z-index: 5;
             text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        /* Loading skeleton for 3D viewers */
+        .philosopher-3d-viewer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: rgba(255, 255, 255, 0.3);
+            animation: spin 2s linear infinite;
+            opacity: 0.5;
+            z-index: 4;
+        }
+
+        .philosopher-3d-viewer.loaded::after {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
         .philosopher-info {
@@ -1481,7 +1533,7 @@
         }
     </style>
 </head>
-<body>
+<body class="loading">
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor"></div>
     <div class="custom-cursor-dot" id="customCursorDot"></div>
@@ -2004,10 +2056,11 @@
                     
                     viewerScene.add(model);
                     
-                    // Hide loading indicator
+                    // Hide loading indicator and mark as loaded
                     if (loadingIndicator) {
                         loadingIndicator.style.display = 'none';
                     }
+                    container.classList.add('loaded');
                 },
                 (xhr) => {
                     if (xhr.lengthComputable) {
@@ -2317,13 +2370,23 @@
             });
         });
 
-        // Loading animation
+        // Loading animation - prevent layout shift
         window.addEventListener('load', () => {
-            gsap.from('body', {
-                opacity: 0,
-                duration: 1,
-                ease: 'power2.inOut'
-            });
+            // Small delay to ensure all resources are ready
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+                document.body.classList.add('loaded');
+            }, 100);
+        });
+
+        // Fallback in case load event doesn't fire
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (document.body.classList.contains('loading')) {
+                    document.body.classList.remove('loading');
+                    document.body.classList.add('loaded');
+                }
+            }, 2000);
         });
 
         // Stoic Figure Interactive Animation with Anime.js
