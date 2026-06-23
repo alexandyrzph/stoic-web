@@ -103,6 +103,10 @@
             display: none;
         }
 
+        html {
+            scroll-behavior: auto;
+        }
+
         body {
             font-family: 'Georgia', serif;
             background: var(--bg-primary);
@@ -110,6 +114,16 @@
             overflow-x: hidden;
             cursor: none;
             transition: var(--theme-transition);
+        }
+
+        .scroll-animate,
+        .philosopher-item,
+        .timeline-item,
+        .virtue-item,
+        .practice-card,
+        .book-card {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         /* Loading Screen */
@@ -845,10 +859,7 @@
             margin-bottom: 200px;
             align-items: center;
             min-height: 600px;
-            opacity: 0;
-            transform: translateY(100px);
             position: relative;
-            will-change: transform, opacity;
         }
 
         /* Add extra padding/blending for smooth container integration */
@@ -1229,6 +1240,8 @@
             height: 100%;
             z-index: -1;
             opacity: 0.3;
+            pointer-events: none;
+            contain: strict;
         }
 
         /* Timeline Section */
@@ -1293,9 +1306,6 @@
             margin-bottom: 120px;
             position: relative;
             z-index: 2;
-            opacity: 0;
-            transform: translateY(50px);
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .timeline-item.visible {
@@ -1391,6 +1401,12 @@
         .horizontal-scroll-wrapper {
             display: flex;
             height: 100%;
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .horizontal-section.is-pinned .horizontal-scroll-wrapper {
             will-change: transform;
         }
 
@@ -1538,11 +1554,9 @@
             padding: 50px 40px;
             position: relative;
             overflow: hidden;
-            opacity: 0;
-            transform: translateY(50px);
-            transition: all 0.4s ease;
             display: flex;
             flex-direction: column;
+            transition: background 0.4s ease, border-color 0.4s ease, transform 0.4s ease;
         }
 
         .book-card.visible {
@@ -1920,6 +1934,25 @@
             }
             66% {
                 transform: translate(-20px, 20px) rotate(240deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .cube,
+            .circle.animate,
+            .scroll-indicator.animate {
+                animation: none !important;
+            }
+
+            .scroll-animate,
+            .philosopher-item,
+            .timeline-item,
+            .book-card,
+            .virtue-item,
+            .practice-card,
+            .stoic-figure {
+                opacity: 1 !important;
+                transform: none !important;
             }
         }
 
@@ -2590,6 +2623,9 @@
                             }, index * 200);
                         });
                     }, 300);
+                    setTimeout(() => {
+                        refreshScrollTriggers();
+                    }, 400);
                 }, 500);
             }
         };
@@ -2650,13 +2686,22 @@
         }
 
         function bindSectionSpotlight(section) {
+            if (!enableHeavyEffects) return;
+            let spotFrame = null;
+            let lastX = 50;
+            let lastY = 50;
+
             section.addEventListener('mousemove', (e) => {
                 const rect = section.getBoundingClientRect();
-                const x = 50 + ((e.clientX - rect.left) / rect.width - 0.5) * 20;
-                const y = 50 + ((e.clientY - rect.top) / rect.height - 0.5) * 20;
-                section.style.setProperty('--spot-x', `${x}%`);
-                section.style.setProperty('--spot-y', `${y}%`);
-            });
+                lastX = 50 + ((e.clientX - rect.left) / rect.width - 0.5) * 20;
+                lastY = 50 + ((e.clientY - rect.top) / rect.height - 0.5) * 20;
+                if (spotFrame) return;
+                spotFrame = requestAnimationFrame(() => {
+                    section.style.setProperty('--spot-x', `${lastX}%`);
+                    section.style.setProperty('--spot-y', `${lastY}%`);
+                    spotFrame = null;
+                });
+            }, { passive: true });
 
             section.addEventListener('mouseleave', () => {
                 section.style.removeProperty('--spot-x');
@@ -2683,13 +2728,32 @@
         // Initialize GSAP ScrollTrigger and ScrollToPlugin
         gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const isFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        const enableHeavyEffects = !prefersReducedMotion && isFinePointer;
+        const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+
+        ScrollTrigger.config({
+            limitCallbacks: true,
+            ignoreMobileResize: true
+        });
+
+        gsap.defaults({ overwrite: 'auto' });
+
+        function refreshScrollTriggers() {
+            requestAnimationFrame(() => ScrollTrigger.refresh());
+        }
+
         // Three.js Animated Background
         const canvas = document.getElementById('threejs-canvas');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(MAX_DPR);
         renderer.setSize(window.innerWidth, window.innerHeight);
         camera.position.z = 50;
+
+        let bgActive = true;
 
         // Create particles
         const particlesGeometry = new THREE.BufferGeometry();
@@ -2722,25 +2786,40 @@
         const torus = new THREE.Mesh(geometry, material);
         scene.add(torus);
 
-        // Animation loop
+        // Animation loop — pauses when hero leaves view
         function animate() {
             requestAnimationFrame(animate);
-            
+            if (!bgActive) return;
+
             torus.rotation.x += 0.001;
             torus.rotation.y += 0.002;
-            
             particlesMesh.rotation.x += 0.0001;
             particlesMesh.rotation.y += 0.0002;
-            
+
             renderer.render(scene, camera);
         }
         animate();
 
+        ScrollTrigger.create({
+            trigger: '.hero',
+            start: 'top bottom',
+            end: 'bottom top',
+            onEnter: () => { bgActive = true; },
+            onEnterBack: () => { bgActive = true; },
+            onLeave: () => { bgActive = false; },
+            onLeaveBack: () => { bgActive = false; }
+        });
+
         // Handle window resize
+        let resizeTimer;
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                refreshScrollTriggers();
+            }, 150);
         });
 
         // Function to create 3D model viewer
@@ -2771,10 +2850,11 @@
             // Create renderer
             const viewerRenderer = new THREE.WebGLRenderer({ 
                 antialias: true,
-                alpha: true 
+                alpha: true,
+                powerPreference: 'high-performance'
             });
+            viewerRenderer.setPixelRatio(MAX_DPR);
             viewerRenderer.setSize(container.clientWidth, container.clientHeight);
-            viewerRenderer.setPixelRatio(window.devicePixelRatio);
             viewerRenderer.shadowMap.enabled = !getThemeColors().isLight;
             viewerRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
             viewerRenderer.setClearColor(0x000000, 0);
@@ -2901,11 +2981,20 @@
                 }
             );
             
-            // Animation loop
+            // Animation loop — pauses when off-screen
+            let viewerActive = false;
+            const viewerObserver = new IntersectionObserver((entries) => {
+                viewerActive = entries[0].isIntersecting;
+                controls.autoRotate = viewerActive;
+            }, { rootMargin: '120px 0px', threshold: 0.05 });
+            viewerObserver.observe(container);
+
             function animateViewer() {
                 requestAnimationFrame(animateViewer);
-                controls.update();
-                viewerRenderer.render(viewerScene, viewerCamera);
+                if (viewerActive) {
+                    controls.update();
+                    viewerRenderer.render(viewerScene, viewerCamera);
+                }
             }
             animateViewer();
             
@@ -2917,7 +3006,7 @@
                 viewerCamera.aspect = width / height;
                 viewerCamera.updateProjectionMatrix();
                 viewerRenderer.setSize(width, height);
-            });
+            }, { passive: true });
         }
 
         // Initialize 3D model viewers with actual GLB models
@@ -3024,187 +3113,189 @@
             });
         });
 
-        // GSAP Scroll Animations with smoother transitions
-        gsap.utils.toArray('.scroll-animate').forEach(element => {
-            gsap.from(element, {
-                scrollTrigger: {
-                    trigger: element,
-                    start: 'top 85%',
-                    end: 'bottom 20%',
-                    toggleActions: 'play none none reverse'
-                },
-                opacity: 0,
-                y: 50,
-                duration: 1.2,
-                ease: 'power2.out'
-            });
+        // GSAP Scroll Animations — batched for fewer triggers & smoother scroll
+        const revealEase = 'power2.out';
+        const revealDuration = prefersReducedMotion ? 0.01 : 0.95;
+
+        gsap.set('.scroll-animate', { opacity: 0, y: 48 });
+        gsap.set('.philosopher-item', { opacity: 0, y: 100 });
+        gsap.set('.timeline-item', { opacity: 0, y: 50 });
+        gsap.set('.book-card', { opacity: 0, y: 40 });
+        gsap.set('.virtue-item', { opacity: 0, y: 40 });
+        gsap.set('.practice-card', { opacity: 0, y: 40 });
+
+        ScrollTrigger.batch('.scroll-animate:not(.philosopher-item):not(.timeline-item):not(.book-card):not(.virtue-item):not(.practice-card)', {
+            start: 'top 88%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: revealEase,
+                stagger: 0.06,
+                clearProps: 'transform'
+            })
         });
 
-        // Philosopher items with stagger
-        gsap.utils.toArray('.philosopher-item').forEach((item, index) => {
-            gsap.from(item, {
-                scrollTrigger: {
-                    trigger: item,
-                    start: 'top 85%',
-                    end: 'bottom 20%',
-                },
-                opacity: 0,
-                y: 150,
-                duration: 1.2,
-                delay: index * 0.2,
-                ease: 'power3.out'
-            });
+        ScrollTrigger.batch('.philosopher-item', {
+            start: 'top 85%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: 'power3.out',
+                stagger: 0.15,
+                clearProps: 'transform'
+            })
         });
 
-        // Timeline items animation with stagger
+        ScrollTrigger.batch('.timeline-item', {
+            start: 'top 88%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: revealEase,
+                stagger: 0.1,
+                clearProps: 'transform'
+            })
+        });
+
+        ScrollTrigger.batch('.book-card', {
+            start: 'top 90%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: revealEase,
+                stagger: 0.1,
+                clearProps: 'transform'
+            })
+        });
+
+        ScrollTrigger.batch('.virtue-item', {
+            start: 'top 90%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: revealEase,
+                stagger: 0.08,
+                clearProps: 'transform'
+            })
+        });
+
+        ScrollTrigger.batch('.practice-card', {
+            start: 'top 90%',
+            once: true,
+            onEnter: batch => gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: revealDuration,
+                ease: revealEase,
+                stagger: 0.12,
+                clearProps: 'transform'
+            })
+        });
+
+        // Timeline progress bar
         const timelineSection = document.querySelector('.timeline-section');
         const timelineProgress = document.getElementById('timelineProgress');
-        
-        // Animate timeline progress bar with smoother scrub
-        gsap.to(timelineProgress, {
-            scrollTrigger: {
-                trigger: timelineSection,
-                start: 'top center',
-                end: 'bottom center',
-                scrub: 2
-            },
-            height: '100%',
-            ease: 'none'
-        });
 
-        // Timeline items with smoother, gentler animations
-        gsap.utils.toArray('.timeline-item').forEach((item, index) => {
-            // Fade in and slide up with smoother easing
-            gsap.from(item, {
+        if (timelineProgress && timelineSection) {
+            gsap.to(timelineProgress, {
                 scrollTrigger: {
-                    trigger: item,
-                    start: 'top 85%',
-                    end: 'bottom 20%',
-                    toggleActions: 'play none none reverse'
+                    trigger: timelineSection,
+                    start: 'top center',
+                    end: 'bottom center',
+                    scrub: 0.6,
+                    fastScrollEnd: true
                 },
-                opacity: 0,
-                y: 60,
-                duration: 1.4,
-                ease: 'power2.out',
-                clearProps: 'all'
+                height: '100%',
+                ease: 'none'
             });
+        }
 
-            // Animate the timeline content specifically
-            const content = item.querySelector('.timeline-content');
-            if (content) {
-                gsap.from(content, {
+        // Hero parallax — single scrub timeline
+        if (!prefersReducedMotion) {
+            gsap.timeline({
+                scrollTrigger: {
+                    trigger: '.hero',
+                    start: 'top top',
+                    end: 'bottom top',
+                    scrub: 0.4,
+                    fastScrollEnd: true
+                }
+            })
+            .to('.hero-title', { y: 180, opacity: 0.4, scale: 1.08, ease: 'none' }, 0)
+            .to('.scroll-indicator', { opacity: 0, y: 40, ease: 'none' }, 0)
+            .to('.cube', { rotation: 180, ease: 'none' }, 0);
+
+            gsap.utils.toArray('.circle').forEach((circle, index) => {
+                gsap.to(circle, {
                     scrollTrigger: {
-                        trigger: item,
-                        start: 'top 80%',
+                        trigger: '.hero',
+                        start: 'top top',
+                        end: 'bottom top',
+                        scrub: 0.5,
+                        fastScrollEnd: true
                     },
-                    scale: 0.95,
-                    duration: 1.2,
-                    ease: 'power1.out'
+                    y: (index + 1) * 120,
+                    ease: 'none'
                 });
-            }
-        });
+            });
+        }
 
-        // Parallax effect on hero elements
-        gsap.to('.hero-title', {
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: 'bottom top',
-                scrub: true
-            },
-            y: 300,
-            opacity: 0.5,
-            scale: 1.2
-        });
-
-        // Horizontal scroll animation
+        // Horizontal scroll — pinned with GPU transform
         const horizontalSection = document.querySelector('.horizontal-section');
         const horizontalWrapper = document.getElementById('horizontalWrapper');
 
-        gsap.to(horizontalWrapper, {
-            scrollTrigger: {
-                trigger: horizontalSection,
-                start: 'top top',
-                end: () => `+=${horizontalWrapper.scrollWidth}`,
-                scrub: 1,
-                pin: true,
-                anticipatePin: 1
-            },
-            x: () => -(horizontalWrapper.scrollWidth - window.innerWidth),
-            ease: 'none'
-        });
+        if (horizontalSection && horizontalWrapper) {
+            const getHorizontalDistance = () =>
+                Math.max(0, horizontalWrapper.scrollWidth - window.innerWidth);
 
-        // Parallax circles
-        gsap.utils.toArray('.circle').forEach((circle, index) => {
-            gsap.to(circle, {
+            gsap.to(horizontalWrapper, {
                 scrollTrigger: {
-                    trigger: 'body',
+                    trigger: horizontalSection,
                     start: 'top top',
-                    end: 'bottom bottom',
-                    scrub: true
+                    end: () => `+=${getHorizontalDistance()}`,
+                    scrub: 0.35,
+                    pin: true,
+                    pinSpacing: true,
+                    anticipatePin: 1,
+                    invalidateOnRefresh: true,
+                    fastScrollEnd: true,
+                    onToggle: self => horizontalSection.classList.toggle('is-pinned', self.isActive)
                 },
-                y: (index + 1) * 300,
-                rotation: 360,
-                ease: 'none'
+                x: () => -getHorizontalDistance(),
+                ease: 'none',
+                force3D: true
             });
-        });
+        }
 
-        // 3D cube rotation speed based on scroll
-        gsap.to('.cube', {
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: 'bottom top',
-                scrub: true
-            },
-            rotation: 360,
-            ease: 'none'
-        });
-
-        // Practices cards floating animation
-        document.querySelectorAll('.practice-card').forEach((card, index) => {
-            gsap.to(card, {
-                y: -20,
-                duration: 2,
-                repeat: -1,
-                yoyo: true,
-                ease: 'power1.inOut',
-                delay: index * 0.3
+        // Subtle practice card float — only when section is in view
+        if (enableHeavyEffects) {
+            document.querySelectorAll('.practice-card').forEach((card, index) => {
+                gsap.to(card, {
+                    y: -12,
+                    duration: 2.4,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut',
+                    delay: index * 0.25,
+                    scrollTrigger: {
+                        trigger: card,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        toggleActions: 'play pause resume pause'
+                    }
+                });
             });
-        });
-
-        // Mouse parallax effect
-        document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX / window.innerWidth - 0.5;
-            const mouseY = e.clientY / window.innerHeight - 0.5;
-            
-            // Move Three.js camera based on mouse
-            gsap.to(camera.position, {
-                x: mouseX * 5,
-                y: -mouseY * 5,
-                duration: 2,
-                ease: 'power2.out'
-            });
-
-            // Parallax on philosopher 3D viewers
-            document.querySelectorAll('.philosopher-3d-viewer').forEach((viewer, index) => {
-                const rect = viewer.getBoundingClientRect();
-                const viewerX = rect.left + rect.width / 2;
-                const viewerY = rect.top + rect.height / 2;
-                
-                if (Math.abs(e.clientX - viewerX) < 400 && Math.abs(e.clientY - viewerY) < 400) {
-                    const moveX = (e.clientX - viewerX) / 50;
-                    const moveY = (e.clientY - viewerY) / 50;
-                    
-                    gsap.to(viewer, {
-                        x: moveX,
-                        y: moveY,
-                        duration: 0.5,
-                        ease: 'power2.out'
-                    });
-                }
-            });
-        });
+        }
 
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -3217,30 +3308,11 @@
                             y: target,
                             autoKill: true
                         },
-                        duration: 1.5,
+                        duration: prefersReducedMotion ? 0.01 : 1.2,
                         ease: 'power3.inOut'
                     });
                 }
             });
-        });
-
-        // Intersection Observer for visibility classes
-        const observerOptions = {
-            threshold: 0.2,
-            rootMargin: '0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        // Observe elements
-        document.querySelectorAll('.scroll-animate, .philosopher-item, .timeline-item, .virtue-item, .practice-card, .book-card').forEach(el => {
-            observer.observe(el);
         });
 
         // Text glitch effect on hover
@@ -3413,168 +3485,131 @@
             });
         }
 
-        // Scroll indicator fade
-        gsap.to('.scroll-indicator', {
-            scrollTrigger: {
-                trigger: '.hero',
-                start: 'top top',
-                end: 'bottom top',
-                scrub: true
-            },
-            opacity: 0,
-            y: 50
-        });
+        // Light scroll-linked depth — fewer triggers, no reverse jank
+        if (!prefersReducedMotion) {
+            document.querySelectorAll('.philosopher-item').forEach(item => {
+                const viewer = item.querySelector('.philosopher-3d-viewer');
+                const info = item.querySelector('.philosopher-info');
 
-        // Enhanced Parallax Effects
-        // Philosopher sections parallax
-        document.querySelectorAll('.philosopher-item').forEach((item, index) => {
-            const viewer = item.querySelector('.philosopher-3d-viewer');
-            const info = item.querySelector('.philosopher-info');
-            
-            if (viewer) {
-                gsap.to(viewer, {
-                    scrollTrigger: {
-                        trigger: item,
-                        start: 'top bottom',
-                        end: 'bottom top',
-                        scrub: 1
-                    },
-                    y: -50,
-                    ease: 'none'
-                });
-            }
-            
-            if (info) {
-                gsap.to(info, {
-                    scrollTrigger: {
-                        trigger: item,
-                        start: 'top bottom',
-                        end: 'bottom top',
-                        scrub: 1
-                    },
-                    y: 50,
-                    ease: 'none'
-                });
-            }
-        });
+                if (viewer) {
+                    gsap.to(viewer, {
+                        scrollTrigger: {
+                            trigger: item,
+                            start: 'top bottom',
+                            end: 'bottom top',
+                            scrub: 0.45,
+                            fastScrollEnd: true
+                        },
+                        y: -30,
+                        ease: 'none'
+                    });
+                }
 
-        // Big text parallax
-        document.querySelectorAll('.big-text').forEach(text => {
-            gsap.to(text, {
-                scrollTrigger: {
-                    trigger: text,
-                    start: 'top bottom',
-                    end: 'bottom top',
-                    scrub: 2
-                },
-                x: -100,
-                ease: 'none'
+                if (info) {
+                    gsap.to(info, {
+                        scrollTrigger: {
+                            trigger: item,
+                            start: 'top bottom',
+                            end: 'bottom top',
+                            scrub: 0.45,
+                            fastScrollEnd: true
+                        },
+                        y: 24,
+                        ease: 'none'
+                    });
+                }
             });
-        });
 
-        // Quote section parallax
-        gsap.to('.quote', {
-            scrollTrigger: {
-                trigger: '.quote-section',
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 1.5
-            },
-            y: -80,
-            scale: 1.1,
-            ease: 'none'
-        });
-
-        // Virtue cards parallax
-        document.querySelectorAll('.virtue-item').forEach((item, index) => {
-            gsap.to(item, {
+            gsap.to('.quote', {
                 scrollTrigger: {
-                    trigger: item,
+                    trigger: '.quote-section',
                     start: 'top bottom',
                     end: 'bottom top',
-                    scrub: 1
-                },
-                y: (index % 2 === 0) ? -30 : 30,
-                ease: 'none'
-            });
-        });
-
-        // Practice cards parallax with rotation
-        document.querySelectorAll('.practice-card').forEach((card, index) => {
-            gsap.to(card, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top bottom',
-                    end: 'bottom top',
-                    scrub: 2
+                    scrub: 0.5,
+                    fastScrollEnd: true
                 },
                 y: -40,
-                rotateZ: (index % 2 === 0) ? 2 : -2,
                 ease: 'none'
             });
-        });
 
-        // Stoic illustration parallax
-        gsap.to('.stoic-illustration', {
-            scrollTrigger: {
-                trigger: '.illustration-section',
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 1.5
-            },
-            y: -60,
-            rotate: 5,
-            ease: 'none'
-        });
+            gsap.to('.stoic-illustration', {
+                scrollTrigger: {
+                    trigger: '.illustration-section',
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 0.5,
+                    fastScrollEnd: true
+                },
+                y: -40,
+                ease: 'none'
+            });
+        }
 
-        // Advanced mouse parallax with depth
-        let mouseX = 0;
-        let mouseY = 0;
-        let currentX = 0;
-        let currentY = 0;
+        // Unified pointer loop — one rAF, quickSetter instead of per-frame tweens
+        const cursor = document.getElementById('customCursor');
+        const cursorDot = document.getElementById('customCursorDot');
+        let cursorX = 0;
+        let cursorY = 0;
+        let pointerX = 0;
+        let pointerY = 0;
+        let smoothPointerX = 0;
+        let smoothPointerY = 0;
+
+        const philosopherInfos = gsap.utils.toArray('.philosopher-info');
+        const heroCircles = gsap.utils.toArray('.circle');
+        const bigTexts = gsap.utils.toArray('.big-text');
+
+        const setInfoX = philosopherInfos.map(el => gsap.quickSetter(el, 'x', 'px'));
+        const setCircleX = heroCircles.map(el => gsap.quickSetter(el, 'x', 'px'));
+        const setBigTextX = bigTexts.map(el => gsap.quickSetter(el, 'x', 'px'));
+        const setBigTextY = bigTexts.map(el => gsap.quickSetter(el, 'y', 'px'));
 
         document.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-        });
+            pointerX = (e.clientX / window.innerWidth - 0.5) * 2;
+            pointerY = (e.clientY / window.innerHeight - 0.5) * 2;
+            cursorX = e.clientX;
+            cursorY = e.clientY;
 
-        // Smooth mouse parallax animation
-        function animateParallax() {
-            currentX += (mouseX - currentX) * 0.05;
-            currentY += (mouseY - currentY) * 0.05;
+            if (cursorDot) {
+                cursorDot.style.left = cursorX + 'px';
+                cursorDot.style.top = cursorY + 'px';
+            }
+        }, { passive: true });
 
-            // Apply to various elements with different intensities
-            document.querySelectorAll('.philosopher-info').forEach(el => {
-                gsap.to(el, {
-                    x: currentX * 20,
-                    y: currentY * 20,
-                    duration: 0.5,
-                    ease: 'power1.out'
+        function tickFrame() {
+            smoothPointerX += (pointerX - smoothPointerX) * 0.08;
+            smoothPointerY += (pointerY - smoothPointerY) * 0.08;
+
+            if (bgActive) {
+                camera.position.x += (smoothPointerX * 2.5 - camera.position.x) * 0.06;
+                camera.position.y += (-smoothPointerY * 2.5 - camera.position.y) * 0.06;
+            }
+
+            if (enableHeavyEffects) {
+                philosopherInfos.forEach((_, i) => {
+                    setInfoX[i](smoothPointerX * 14);
                 });
-            });
 
-            document.querySelectorAll('.circle').forEach((circle, index) => {
-                const intensity = (index + 1) * 15;
-                gsap.to(circle, {
-                    x: currentX * intensity,
-                    y: currentY * intensity,
-                    duration: 0.8,
-                    ease: 'power1.out'
+                heroCircles.forEach((_, i) => {
+                    setCircleX[i](smoothPointerX * (i + 1) * 10);
                 });
-            });
 
-            document.querySelectorAll('.big-text').forEach(text => {
-                gsap.to(text, {
-                    x: currentX * 10,
-                    y: currentY * 10,
-                    duration: 0.6,
-                    ease: 'power1.out'
+                bigTexts.forEach((_, i) => {
+                    setBigTextX[i](smoothPointerX * 8);
+                    setBigTextY[i](smoothPointerY * 8);
                 });
-            });
+            }
 
-            requestAnimationFrame(animateParallax);
+            if (cursor) {
+                const currentLeft = parseFloat(cursor.style.left) || cursorX;
+                const currentTop = parseFloat(cursor.style.top) || cursorY;
+                cursor.style.left = (currentLeft + (cursorX - currentLeft) * 0.22) + 'px';
+                cursor.style.top = (currentTop + (cursorY - currentTop) * 0.22) + 'px';
+            }
+
+            requestAnimationFrame(tickFrame);
         }
-        animateParallax();
+        tickFrame();
 
         // Section-specific interactive effects
         const booksSection = document.querySelector('.books-section');
@@ -3621,49 +3656,19 @@
             });
         }
 
-        // Custom Cursor
-        const cursor = document.getElementById('customCursor');
-        const cursorDot = document.getElementById('customCursorDot');
-        let cursorX = 0;
-        let cursorY = 0;
-        let dotX = 0;
-        let dotY = 0;
-
-        document.addEventListener('mousemove', (e) => {
-            cursorX = e.clientX;
-            cursorY = e.clientY;
-            
-            // Instant update for dot
-            cursorDot.style.left = cursorX + 'px';
-            cursorDot.style.top = cursorY + 'px';
-        });
-
-        // Smooth cursor follow animation
-        function animateCursor() {
-            const diffX = cursorX - parseFloat(cursor.style.left || 0);
-            const diffY = cursorY - parseFloat(cursor.style.top || 0);
-            
-            dotX += diffX * 0.2;
-            dotY += diffY * 0.2;
-            
-            cursor.style.left = cursorX - diffX * 0.8 + 'px';
-            cursor.style.top = cursorY - diffY * 0.8 + 'px';
-            
-            requestAnimationFrame(animateCursor);
-        }
-        animateCursor();
-
         // Cursor hover effects
         const interactiveElements = document.querySelectorAll('a, button, .menu-toggle, .theme-toggle, .stoic-illustration, .philosopher-3d-viewer, .practice-card, .virtue-item, .timeline-content, .book-card');
         
         interactiveElements.forEach(el => {
             el.addEventListener('mouseenter', () => {
+                if (!cursor) return;
                 cursor.style.width = '40px';
                 cursor.style.height = '40px';
                 cursor.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
             });
             
             el.addEventListener('mouseleave', () => {
+                if (!cursor) return;
                 cursor.style.width = '20px';
                 cursor.style.height = '20px';
                 cursor.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--decoration-strong').trim();
@@ -3702,6 +3707,8 @@
                 }
             });
         });
+
+        refreshScrollTriggers();
 
     </script>
 </body>
