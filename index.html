@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('stoicism-theme');
+            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+            if (saved === 'light' || (!saved && prefersLight)) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
     <title>Stoicism - Ancient Wisdom for Modern Times</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -19,12 +28,84 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-deep: #000000;
+            --bg-elevated: #0f0f0f;
+            --bg-card-1: #1a1a1a;
+            --bg-card-2: #141414;
+            --text-primary: #ffffff;
+            --text-on-accent: #000000;
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --border-medium: rgba(255, 255, 255, 0.2);
+            --border-strong: rgba(255, 255, 255, 0.3);
+            --surface: rgba(255, 255, 255, 0.03);
+            --surface-hover: rgba(255, 255, 255, 0.05);
+            --surface-strong: rgba(255, 255, 255, 0.1);
+            --ui-fill: rgba(255, 255, 255, 0.05);
+            --ui-fill-hover: rgba(255, 255, 255, 0.1);
+            --accent-line: rgba(255, 255, 255, 0.3);
+            --selection-bg: #ffffff;
+            --selection-text: #000000;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --glow: rgba(255, 255, 255, 0.3);
+            --gradient-text-end: rgba(255, 255, 255, 0.5);
+            --decoration: rgba(255, 255, 255, 0.1);
+            --decoration-strong: rgba(255, 255, 255, 0.3);
+            --number-fade: 0.05;
+            --three-bg: #000000;
+            --three-particle: #ffffff;
+            --section-spot-inner: #141414;
+            --section-spot-outer: #0a0a0a;
+            --theme-transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f2eb;
+            --bg-deep: #ebe6dc;
+            --bg-elevated: #e8e3d9;
+            --bg-card-1: #ded8cc;
+            --bg-card-2: #d4cfc3;
+            --text-primary: #1a1a1a;
+            --text-on-accent: #f5f2eb;
+            --border-subtle: rgba(0, 0, 0, 0.1);
+            --border-medium: rgba(0, 0, 0, 0.15);
+            --border-strong: rgba(0, 0, 0, 0.25);
+            --surface: rgba(0, 0, 0, 0.03);
+            --surface-hover: rgba(0, 0, 0, 0.05);
+            --surface-strong: rgba(0, 0, 0, 0.08);
+            --ui-fill: rgba(0, 0, 0, 0.04);
+            --ui-fill-hover: rgba(0, 0, 0, 0.08);
+            --accent-line: rgba(0, 0, 0, 0.25);
+            --selection-bg: #1a1a1a;
+            --selection-text: #f5f2eb;
+            --shadow: rgba(0, 0, 0, 0.12);
+            --glow: rgba(0, 0, 0, 0.15);
+            --gradient-text-end: rgba(26, 26, 26, 0.5);
+            --decoration: rgba(0, 0, 0, 0.08);
+            --decoration-strong: rgba(0, 0, 0, 0.2);
+            --number-fade: 0.08;
+            --three-bg: transparent;
+            --three-particle: #1a1a1a;
+            --section-spot-inner: #f8f5ef;
+            --section-spot-outer: #f5f2eb;
+        }
+
+        /* Light mode — hide dark-mode edge blends; let section bg show through */
+        [data-theme="light"] .philosopher-3d-viewer::before,
+        [data-theme="light"] #marcus-viewer::before,
+        [data-theme="light"] #epictetus-viewer::before,
+        [data-theme="light"] #seneca-viewer::before {
+            display: none;
+        }
+
         body {
             font-family: 'Georgia', serif;
-            background: #0a0a0a;
-            color: #ffffff;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
             cursor: none;
+            transition: var(--theme-transition);
         }
 
         /* Loading Screen */
@@ -34,7 +115,7 @@
             left: 0;
             width: 100%;
             height: 100vh;
-            background: #0a0a0a;
+            background: var(--bg-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -52,7 +133,7 @@
         .loading-percentage {
             font-size: clamp(80px, 15vw, 180px);
             font-weight: 900;
-            color: #ffffff;
+            color: var(--text-primary);
             font-family: 'Georgia', serif;
             letter-spacing: -0.05em;
         }
@@ -74,20 +155,25 @@
             overflow: hidden;
         }
 
+        body.loading #loadingScreen ~ * {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         body.loaded {
             overflow-x: hidden;
         }
 
         /* Text Selection Styles */
         ::selection {
-            background: #ffffff;
-            color: #000000;
+            background: var(--selection-bg);
+            color: var(--selection-text);
             text-shadow: none;
         }
 
         ::-moz-selection {
-            background: #ffffff;
-            color: #000000;
+            background: var(--selection-bg);
+            color: var(--selection-text);
             text-shadow: none;
         }
 
@@ -95,21 +181,21 @@
         .menu-items ::selection,
         .quote ::selection,
         .hero-title ::selection {
-            background: rgba(255, 255, 255, 0.95);
-            color: #000000;
+            background: var(--selection-bg);
+            color: var(--selection-text);
         }
 
         /* Subtle selection for interactive elements */
         .philosopher-quote ::selection,
         .practice-tip ::selection {
-            background: rgba(255, 255, 255, 0.9);
-            color: #0a0a0a;
+            background: var(--selection-bg);
+            color: var(--selection-text);
         }
 
         /* Menu selection with slight transparency */
         .fullscreen-menu ::selection {
-            background: #ffffff;
-            color: #000000;
+            background: var(--selection-bg);
+            color: var(--selection-text);
             text-shadow: none;
         }
 
@@ -117,7 +203,7 @@
         .custom-cursor {
             width: 20px;
             height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            border: 2px solid var(--decoration-strong);
             border-radius: 50%;
             position: fixed;
             pointer-events: none;
@@ -130,12 +216,26 @@
         .custom-cursor-dot {
             width: 4px;
             height: 4px;
-            background: white;
+            background: var(--text-primary);
             border-radius: 50%;
             position: fixed;
             pointer-events: none;
             z-index: 10000;
             transform: translate(-50%, -50%);
+        }
+
+        body.menu-open .custom-cursor,
+        body.menu-open .custom-cursor-dot {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        body.menu-open {
+            cursor: auto;
+        }
+
+        body.menu-open .menu-items a {
+            cursor: pointer;
         }
 
         /* Fullscreen Menu */
@@ -145,10 +245,10 @@
             right: 40px;
             width: 60px;
             height: 60px;
-            z-index: 1001;
+            z-index: 10003;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--ui-fill);
+            border: 1px solid var(--border-medium);
             border-radius: 50%;
             display: flex;
             flex-direction: column;
@@ -159,13 +259,13 @@
         }
 
         .menu-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--ui-fill-hover);
         }
 
         .menu-toggle span {
             width: 24px;
             height: 2px;
-            background: white;
+            background: var(--text-primary);
             transition: all 0.3s ease;
             display: block;
             position: relative;
@@ -185,20 +285,102 @@
             position: absolute;
         }
 
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 40px;
+            right: 115px;
+            width: 60px;
+            height: 60px;
+            z-index: 10003;
+            cursor: pointer;
+            background: var(--ui-fill);
+            border: 1px solid var(--border-medium);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:hover {
+            background: var(--ui-fill-hover);
+        }
+
+        .theme-toggle svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .icon-sun,
+        .theme-toggle .icon-moon {
+            position: absolute;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .theme-toggle .icon-sun {
+            opacity: 0;
+            transform: rotate(-90deg) scale(0.5);
+        }
+
+        .theme-toggle .icon-moon {
+            opacity: 1;
+            transform: rotate(0) scale(1);
+        }
+
+        [data-theme="light"] .theme-toggle .icon-sun {
+            opacity: 1;
+            transform: rotate(0) scale(1);
+        }
+
+        [data-theme="light"] .theme-toggle .icon-moon {
+            opacity: 0;
+            transform: rotate(90deg) scale(0.5);
+        }
+
+        /* Light mode — simplify 3D viewer edge blends */
+        [data-theme="light"] .philosopher-3d-viewer::after,
+        [data-theme="light"] #marcus-viewer::after,
+        [data-theme="light"] #epictetus-viewer::after,
+        [data-theme="light"] #seneca-viewer::after {
+            display: none;
+        }
+
+        [data-theme="light"] .philosopher-3d-viewer canvas {
+            background: transparent !important;
+        }
+
+        [data-theme="light"] .philosopher-item::before {
+            display: none;
+        }
+
+        .stoic-figure [stroke="white"] {
+            stroke: var(--text-primary);
+        }
+
         .fullscreen-menu {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100vh;
-            background: #000000;
-            z-index: 1000;
+            height: 100dvh;
+            background: var(--bg-primary);
+            z-index: 10002;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .fullscreen-menu.active {
@@ -215,7 +397,7 @@
         }
 
         .menu-items li {
-            margin: 30px 0;
+            margin: clamp(14px, 2.4vh, 26px) 0;
             opacity: 0;
             transform: translateY(30px);
             transition: all 0.5s ease;
@@ -232,15 +414,17 @@
         .menu-items li:nth-child(4) { transition-delay: 0.4s; }
         .menu-items li:nth-child(5) { transition-delay: 0.5s; }
         .menu-items li:nth-child(6) { transition-delay: 0.6s; }
+        .menu-items li:nth-child(7) { transition-delay: 0.7s; }
 
         .menu-items a {
-            color: white;
+            color: var(--text-primary);
             text-decoration: none;
-            font-size: clamp(40px, 8vw, 80px);
+            font-size: clamp(36px, 7vw, 72px);
             font-weight: 900;
             letter-spacing: -0.02em;
             transition: all 0.3s ease;
             display: inline-block;
+            line-height: 1.1;
         }
 
         .menu-items a:hover {
@@ -261,7 +445,7 @@
         }
 
         .menu-social a {
-            color: white;
+            color: var(--text-primary);
             text-decoration: none;
             font-size: 18px;
             margin: 0 20px;
@@ -343,8 +527,8 @@
             position: absolute;
             width: 200px;
             height: 200px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid var(--decoration);
+            background: var(--surface);
         }
 
         .cube-face.front  { transform: rotateY(0deg) translateZ(100px); }
@@ -362,7 +546,7 @@
         /* Floating circles decoration */
         .circle {
             position: absolute;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--decoration);
             border-radius: 50%;
             opacity: 0;
             transition: opacity 2s ease;
@@ -409,7 +593,7 @@
             position: absolute;
             width: 4px;
             height: 4px;
-            background: white;
+            background: var(--text-primary);
             border-radius: 50%;
             opacity: 0.3;
         }
@@ -419,6 +603,11 @@
             padding: 150px 50px;
             position: relative;
             transition: background 0.3s ease;
+            background: radial-gradient(
+                circle at var(--spot-x, 50%) var(--spot-y, 50%),
+                var(--section-spot-inner),
+                var(--section-spot-outer)
+            );
         }
 
         .philosophy-content {
@@ -450,7 +639,7 @@
         /* 3D Philosopher Models Section - New Design */
         .philosophers-section {
             padding: 200px 0;
-            background: #000000;
+            background: var(--bg-deep);
             position: relative;
             overflow: hidden;
         }
@@ -477,7 +666,7 @@
 
         .philosophers-title:hover {
             transform: scale(1.05);
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 30px var(--glow);
         }
 
         .philosophers-container {
@@ -573,8 +762,8 @@
             right: -120px;
             bottom: -120px;
             background: 
-                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
-                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to bottom, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
+                linear-gradient(to right, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
                 radial-gradient(ellipse 150% 150% at center, 
                     transparent 0%, 
                     transparent 20%, 
@@ -584,7 +773,7 @@
                     rgba(0, 0, 0, 0.8) 75%, 
                     rgba(0, 0, 0, 0.92) 87%,
                     rgba(0, 0, 0, 0.97) 93%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
             pointer-events: none;
             z-index: 5;
         }
@@ -605,7 +794,7 @@
                     rgba(0, 0, 0, 0.4) 60%,
                     rgba(0, 0, 0, 0.7) 75%,
                     rgba(0, 0, 0, 0.88) 87%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
             pointer-events: none;
             z-index: 6;
         }
@@ -613,8 +802,8 @@
         /* Unique styling for each philosopher viewer - ultra-smooth blends with edge fading */
         #marcus-viewer::before {
             background: 
-                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
-                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to bottom, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
+                linear-gradient(to right, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
                 radial-gradient(ellipse 150% 150% at 30% 40%, 
                     transparent 0%, 
                     transparent 18%,
@@ -624,7 +813,7 @@
                     rgba(0, 0, 0, 0.7) 73%,
                     rgba(0, 0, 0, 0.88) 85%,
                     rgba(0, 0, 0, 0.96) 93%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         #marcus-viewer::after {
@@ -636,13 +825,13 @@
                     rgba(0, 0, 0, 0.3) 62%,
                     rgba(0, 0, 0, 0.65) 77%,
                     rgba(0, 0, 0, 0.85) 88%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         #epictetus-viewer::before {
             background: 
-                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
-                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to bottom, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
+                linear-gradient(to right, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
                 radial-gradient(ellipse 150% 150% at 70% 40%, 
                     transparent 0%, 
                     transparent 18%,
@@ -652,7 +841,7 @@
                     rgba(0, 0, 0, 0.7) 73%,
                     rgba(0, 0, 0, 0.88) 85%,
                     rgba(0, 0, 0, 0.96) 93%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         #epictetus-viewer::after {
@@ -664,13 +853,13 @@
                     rgba(0, 0, 0, 0.3) 62%,
                     rgba(0, 0, 0, 0.65) 77%,
                     rgba(0, 0, 0, 0.85) 88%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         #seneca-viewer::before {
             background: 
-                linear-gradient(to bottom, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
-                linear-gradient(to right, #000000 0%, transparent 12%, transparent 88%, #000000 100%),
+                linear-gradient(to bottom, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
+                linear-gradient(to right, var(--bg-deep) 0%, transparent 12%, transparent 88%, var(--bg-deep) 100%),
                 radial-gradient(ellipse 150% 150% at center, 
                     transparent 0%, 
                     transparent 18%,
@@ -680,7 +869,7 @@
                     rgba(0, 0, 0, 0.7) 73%,
                     rgba(0, 0, 0, 0.88) 85%,
                     rgba(0, 0, 0, 0.96) 93%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         #seneca-viewer::after {
@@ -692,7 +881,7 @@
                     rgba(0, 0, 0, 0.3) 62%,
                     rgba(0, 0, 0, 0.65) 77%,
                     rgba(0, 0, 0, 0.85) 88%,
-                    #000000 100%);
+                    var(--bg-deep) 100%);
         }
 
         /* Hover glow overlay layers - smooth opacity transitions */
@@ -776,9 +965,9 @@
             transform: translate(-50%, -50%);
             width: 200px;
             height: 200px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--decoration);
             border-radius: 50%;
-            border-top-color: rgba(255, 255, 255, 0.3);
+            border-top-color: var(--decoration-strong);
             animation: spin 2s linear infinite;
             opacity: 0.5;
             z-index: 4;
@@ -801,7 +990,7 @@
         .philosopher-number {
             font-size: 120px;
             font-weight: 900;
-            opacity: 0.05;
+            opacity: var(--number-fade);
             line-height: 1;
             margin-bottom: -40px;
         }
@@ -836,7 +1025,7 @@
             font-style: italic;
             margin-bottom: 40px;
             padding-left: 30px;
-            border-left: 3px solid rgba(255, 255, 255, 0.3);
+            border-left: 3px solid var(--accent-line);
             opacity: 0.9;
         }
 
@@ -882,7 +1071,7 @@
         /* Timeline Section */
         .timeline-section {
             padding: 200px 50px;
-            background: #0a0a0a;
+            background: var(--bg-primary);
             position: relative;
         }
 
@@ -902,7 +1091,7 @@
 
         .timeline-title:hover {
             transform: scale(1.05);
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 30px var(--glow);
         }
 
         .timeline {
@@ -919,7 +1108,7 @@
             transform: translateX(-50%);
             width: 2px;
             height: 100%;
-            background: rgba(255,255,255,0.1);
+            background: var(--border-subtle);
             z-index: 0;
         }
 
@@ -929,7 +1118,7 @@
             transform: translateX(-50%);
             width: 2px;
             height: 0%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
+            background: linear-gradient(to bottom, var(--text-primary), var(--gradient-text-end));
             z-index: 1;
             top: 0;
         }
@@ -970,11 +1159,11 @@
             transform: translate(-50%, -50%);
             width: 20px;
             height: 20px;
-            background: #ffffff;
-            border: 4px solid #0a0a0a;
+            background: var(--text-primary);
+            border: 4px solid var(--bg-primary);
             border-radius: 50%;
             z-index: 3;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 4px var(--border-medium);
         }
 
         .timeline-item:nth-child(even)::after {
@@ -985,33 +1174,33 @@
             transform: translate(-50%, -50%);
             width: 20px;
             height: 20px;
-            background: #ffffff;
-            border: 4px solid #0a0a0a;
+            background: var(--text-primary);
+            border: 4px solid var(--bg-primary);
             border-radius: 50%;
             z-index: 3;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 4px var(--border-medium);
         }
 
         .timeline-content {
             padding: 50px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
             position: relative;
             transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .timeline-content:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--surface-hover);
             transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px var(--shadow);
+            border-color: var(--border-strong);
         }
 
         .timeline-year {
             font-size: 64px;
             font-weight: 900;
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.5) 100%);
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--gradient-text-end) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1054,10 +1243,10 @@
             overflow: hidden;
         }
 
-        .principle-card:nth-child(1) { background: #1a1a1a; }
-        .principle-card:nth-child(2) { background: #0f0f0f; }
-        .principle-card:nth-child(3) { background: #141414; }
-        .principle-card:nth-child(4) { background: #0a0a0a; }
+        .principle-card:nth-child(1) { background: var(--bg-card-1); }
+        .principle-card:nth-child(2) { background: var(--bg-elevated); }
+        .principle-card:nth-child(3) { background: var(--bg-card-2); }
+        .principle-card:nth-child(4) { background: var(--bg-primary); }
 
         .principle-number {
             font-size: clamp(100px, 20vw, 300px);
@@ -1131,11 +1320,148 @@
             transform-origin: center;
         }
 
+        /* Books Section */
+        .books-section {
+            padding: 200px 50px;
+            background: radial-gradient(
+                circle at var(--spot-x, 50%) var(--spot-y, 50%),
+                var(--section-spot-inner),
+                var(--section-spot-outer)
+            );
+            transition: background 0.3s ease;
+            position: relative;
+        }
+
+        .books-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .books-title.visible {
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .books-title:hover {
+            transform: scale(1.05);
+            text-shadow: 0 0 30px var(--glow);
+        }
+
+        .books-subtitle {
+            text-align: center;
+            font-size: clamp(16px, 2vw, 20px);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 100px;
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .book-card {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--border-strong);
+            padding: 50px 40px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-card.visible {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .book-card:nth-child(2) { animation-delay: 0.12s; }
+        .book-card:nth-child(3) { animation-delay: 0.24s; }
+
+        .book-card:hover {
+            transform: translateY(-12px);
+            background: var(--surface-hover);
+            border-color: var(--border-strong);
+            border-left-color: var(--text-primary);
+        }
+
+        .book-number {
+            font-size: 100px;
+            font-weight: 900;
+            opacity: var(--number-fade);
+            line-height: 1;
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            pointer-events: none;
+        }
+
+        .book-title {
+            font-size: clamp(28px, 3vw, 40px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            padding-right: 60px;
+        }
+
+        .book-meta {
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.45;
+            margin-bottom: 28px;
+        }
+
+        .book-description {
+            font-size: clamp(16px, 1.5vw, 18px);
+            line-height: 1.75;
+            opacity: 0.8;
+            margin-bottom: 40px;
+            flex-grow: 1;
+        }
+
+        .book-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .book-link::after {
+            content: '→';
+            transition: transform 0.3s ease;
+        }
+
+        .book-card:hover .book-link {
+            opacity: 1;
+        }
+
+        .book-card:hover .book-link::after {
+            transform: translateX(6px);
+        }
+
         /* Quote Section */
         .quote-section {
             padding: 200px 50px;
             text-align: center;
-            background: #000000;
+            background: var(--bg-deep);
         }
 
         .quote {
@@ -1163,7 +1489,11 @@
         /* Virtues Grid */
         .virtues-section {
             padding: 150px 50px;
-            background: #0f0f0f;
+            background: radial-gradient(
+                circle at var(--spot-x, 50%) var(--spot-y, 50%),
+                var(--section-spot-inner),
+                var(--section-spot-outer)
+            );
             transition: background 0.3s ease;
         }
 
@@ -1183,7 +1513,7 @@
 
         .virtues-title:hover {
             transform: scale(1.05) rotateZ(1deg);
-            text-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+            text-shadow: 0 0 40px var(--glow);
         }
 
         .virtues-grid {
@@ -1219,8 +1549,8 @@
 
         .virtue-item {
             padding: 60px 40px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
             transition: all 0.4s ease;
             opacity: 0;
             transform: translateY(50px);
@@ -1235,7 +1565,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background: linear-gradient(90deg, transparent, var(--surface-strong), transparent);
             transition: left 0.5s ease;
         }
 
@@ -1252,9 +1582,9 @@
         .virtue-item:nth-child(4) { animation-delay: 0.3s; }
 
         .virtue-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--surface-hover);
             transform: translateY(-10px);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: var(--border-strong);
         }
 
         .virtue-name {
@@ -1274,7 +1604,7 @@
         /* Daily Practices Section */
         .practices-section {
             padding: 200px 50px;
-            background: #000000;
+            background: var(--bg-deep);
             position: relative;
         }
 
@@ -1294,7 +1624,7 @@
 
         .practices-title:hover {
             transform: scale(1.05) rotateZ(-1deg);
-            text-shadow: 0 0 35px rgba(255, 255, 255, 0.35);
+            text-shadow: 0 0 35px var(--glow);
         }
 
         .practices-grid {
@@ -1306,8 +1636,8 @@
         }
 
         .practice-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
             padding: 50px;
             transition: all 0.4s ease;
             opacity: 0;
@@ -1350,13 +1680,13 @@
             font-style: italic;
             opacity: 0.6;
             padding-left: 20px;
-            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-left: 2px solid var(--accent-line);
         }
 
         .practice-card:hover {
             transform: translateY(-15px) scale(1.02);
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--surface-hover);
+            border-color: var(--border-strong);
         }
 
         /* Final Section */
@@ -1365,7 +1695,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #000000;
+            background: var(--bg-deep);
             position: relative;
             overflow: hidden;
         }
@@ -1514,10 +1844,34 @@
         }
 
         @media (max-width: 768px) {
+            .theme-toggle {
+                top: 24px;
+                right: 84px;
+                width: 48px;
+                height: 48px;
+            }
+
+            .menu-toggle {
+                top: 24px;
+                right: 24px;
+                width: 48px;
+                height: 48px;
+            }
+
             .philosophy-section,
             .virtues-section,
-            .illustration-section {
+            .illustration-section,
+            .books-section {
                 padding: 100px 30px;
+            }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .book-card {
+                padding: 40px 30px;
             }
 
             .principle-card {
@@ -1594,7 +1948,7 @@
 <body class="loading">
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
-        <div class="loading-percentage" id="loadingPercentage">0%</div>
+        <div class="loading-percentage" id="loadingPercentage">1%</div>
         <div class="loading-bar-container">
             <div class="loading-bar" id="loadingBar"></div>
         </div>
@@ -1604,6 +1958,24 @@
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor"></div>
     <div class="custom-cursor-dot" id="customCursorDot"></div>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    </button>
 
     <!-- Menu Toggle -->
     <div class="menu-toggle" id="menuToggle">
@@ -1620,6 +1992,7 @@
                 <li><a href="#philosophers">Masters</a></li>
                 <li><a href="#virtues">Virtues</a></li>
                 <li><a href="#practices">Practices</a></li>
+                <li><a href="#books">Books</a></li>
                 <li><a href="#wisdom">Wisdom</a></li>
             </ul>
         </div>
@@ -1857,6 +2230,41 @@
         </svg>
     </section>
 
+    <!-- Books Section -->
+    <section class="books-section" id="books">
+        <h2 class="books-title scroll-animate">ESSENTIAL READING</h2>
+        <p class="books-subtitle scroll-animate">Three texts. Two millennia of wisdom.</p>
+        <div class="books-grid">
+            <article class="book-card scroll-animate">
+                <div class="book-number">01</div>
+                <h3 class="book-title">Meditations</h3>
+                <p class="book-meta">Marcus Aurelius · c. 170 AD</p>
+                <p class="book-description">
+                    Private notes on resilience, duty, and self-mastery — never intended for publication, yet among the most influential works of philosophy ever written.
+                </p>
+                <a class="book-link" href="https://www.gutenberg.org/ebooks/2680" target="_blank" rel="noopener noreferrer">Read the text</a>
+            </article>
+            <article class="book-card scroll-animate">
+                <div class="book-number">02</div>
+                <h3 class="book-title">Letters from a Stoic</h3>
+                <p class="book-meta">Seneca · 1st century AD</p>
+                <p class="book-description">
+                    Practical essays on friendship, mortality, anger, and living well — written as letters but read as timeless counsel on navigating life's difficulties with grace.
+                </p>
+                <a class="book-link" href="https://en.wikisource.org/wiki/Moral_letters_to_Lucilius" target="_blank" rel="noopener noreferrer">Read the text</a>
+            </article>
+            <article class="book-card scroll-animate">
+                <div class="book-number">03</div>
+                <h3 class="book-title">Enchiridion</h3>
+                <p class="book-meta">Epictetus · c. 125 AD</p>
+                <p class="book-description">
+                    A concise handbook distilling Epictetus's core teaching: distinguish what is in your power from what is not, and find freedom in that distinction.
+                </p>
+                <a class="book-link" href="https://www.gutenberg.org/ebooks/45109" target="_blank" rel="noopener noreferrer">Read the text</a>
+            </article>
+        </div>
+    </section>
+
     <!-- Quote Section -->
     <section class="quote-section">
         <blockquote class="quote scroll-animate">
@@ -1941,45 +2349,48 @@
     </section>
 
     <script>
-        // Loading Progress Tracker
+        // Loading Progress Tracker — gates page reveal on all 3D models
+        const MODEL_IDS = ['marcus-viewer', 'epictetus-viewer', 'seneca-viewer'];
+
         const loadingManager = {
-            total: 0,
-            loaded: 0,
-            percentage: 0,
             models: {},
-            
-            init() {
-                this.updateProgress(0);
+            completed: false,
+
+            init(modelIds) {
+                modelIds.forEach(id => {
+                    this.models[id] = { progress: 0 };
+                });
+                this.updateDisplay(1);
             },
-            
-            addModel(name, total = 100) {
-                this.models[name] = { loaded: 0, total: total };
-                this.total += total;
+
+            updateModel(name, progress) {
+                if (this.completed || !this.models[name]) return;
+                this.models[name].progress = Math.min(progress, 100);
+                this.checkComplete();
             },
-            
-            updateModel(name, loaded) {
-                if (this.models[name]) {
-                    const prev = this.models[name].loaded;
-                    this.models[name].loaded = loaded;
-                    this.loaded += (loaded - prev);
-                    this.calculate();
+
+            checkComplete() {
+                const entries = Object.values(this.models);
+                const totalProgress = entries.reduce((sum, m) => sum + m.progress, 0);
+                const percent = Math.round(totalProgress / entries.length);
+                const allLoaded = entries.every(m => m.progress >= 100);
+
+                if (allLoaded) {
+                    this.complete();
+                } else {
+                    this.updateDisplay(Math.max(1, Math.min(percent, 99)));
                 }
             },
-            
-            calculate() {
-                if (this.total > 0) {
-                    this.percentage = Math.min(Math.round((this.loaded / this.total) * 100), 100);
-                    this.updateProgress(this.percentage);
-                }
-            },
-            
-            updateProgress(percent) {
+
+            updateDisplay(percent) {
                 const percentageEl = document.getElementById('loadingPercentage');
                 if (percentageEl) percentageEl.textContent = percent + '%';
             },
-            
+
             complete() {
-                this.updateProgress(100);
+                if (this.completed) return;
+                this.completed = true;
+                this.updateDisplay(100);
                 setTimeout(() => {
                     const loadingScreen = document.getElementById('loadingScreen');
                     if (loadingScreen) {
@@ -1987,41 +2398,107 @@
                     }
                     document.body.classList.remove('loading');
                     document.body.classList.add('loaded');
-                    
-                    // Trigger hero animations after loading screen fades
+
                     setTimeout(() => {
                         const heroTitle = document.querySelector('.hero-title');
                         const heroSubtitle = document.querySelector('.hero-subtitle');
                         const cubeContainer = document.querySelector('.cube-container');
                         const circles = document.querySelectorAll('.circle');
                         const scrollIndicator = document.querySelector('.scroll-indicator');
-                        
+
                         if (heroTitle) heroTitle.classList.add('animate');
                         if (heroSubtitle) heroSubtitle.classList.add('animate');
                         if (cubeContainer) cubeContainer.classList.add('animate');
                         if (scrollIndicator) scrollIndicator.classList.add('animate');
-                        
+
                         circles.forEach((circle, index) => {
                             setTimeout(() => {
                                 circle.classList.add('animate');
-                            }, index * 200); // Stagger circle animations
+                            }, index * 200);
                         });
-                    }, 300); // Start animations 300ms after loading screen begins fading
+                    }, 300);
                 }, 500);
             }
         };
-        
-        // Initialize loading manager
-        loadingManager.init();
-        
-        // Track page resources
-        let resourcesLoaded = 0;
-        let totalResources = document.images.length + 
-                             document.querySelectorAll('script').length + 
-                             document.querySelectorAll('link[rel="stylesheet"]').length;
-        
-        // Add base resources to loading
-        loadingManager.addModel('resources', totalResources || 10);
+
+        loadingManager.init(MODEL_IDS);
+
+        const threeViewers = [];
+
+        function getThemeColors() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const styles = getComputedStyle(document.documentElement);
+            const threeParticle = styles.getPropertyValue('--three-particle').trim();
+            return {
+                isLight,
+                particle: parseInt(threeParticle.replace('#', ''), 16)
+            };
+        }
+
+        function applyThemeTo3D() {
+            const { isLight, particle } = getThemeColors();
+            particlesMaterial.color.setHex(particle);
+            particlesMaterial.opacity = isLight ? 0.35 : 0.6;
+            material.color.setHex(particle);
+            material.opacity = isLight ? 0.12 : 0.1;
+            threeViewers.forEach(({ scene, renderer, lights }) => {
+                scene.background = null;
+                renderer.setClearColor(0x000000, 0);
+                renderer.shadowMap.enabled = !isLight;
+                scene.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = !isLight;
+                        child.receiveShadow = !isLight;
+                    }
+                });
+                if (lights) {
+                    lights.ambient.intensity = isLight ? 1.1 : 0.8;
+                    lights.directional1.intensity = isLight ? 0.7 : 1.0;
+                    lights.directional2.intensity = isLight ? 0.4 : 0.6;
+                    lights.fill.intensity = isLight ? 0.35 : 0.5;
+                    lights.back.intensity = isLight ? 0.25 : 0.4;
+                }
+            });
+        }
+
+        function resetSectionBackgrounds() {
+            document.querySelectorAll('.philosophy-section, .virtues-section, .books-section').forEach(section => {
+                section.style.removeProperty('--spot-x');
+                section.style.removeProperty('--spot-y');
+                section.style.removeProperty('background');
+            });
+        }
+
+        function bindSectionSpotlight(section) {
+            section.addEventListener('mousemove', (e) => {
+                const rect = section.getBoundingClientRect();
+                const x = 50 + ((e.clientX - rect.left) / rect.width - 0.5) * 20;
+                const y = 50 + ((e.clientY - rect.top) / rect.height - 0.5) * 20;
+                section.style.setProperty('--spot-x', `${x}%`);
+                section.style.setProperty('--spot-y', `${y}%`);
+            });
+
+            section.addEventListener('mouseleave', () => {
+                section.style.removeProperty('--spot-x');
+                section.style.removeProperty('--spot-y');
+            });
+        }
+
+        function setTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('stoicism-theme', theme);
+            resetSectionBackgrounds();
+            applyThemeTo3D();
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            setTheme(isLight ? 'dark' : 'light');
+        });
 
         // Initialize GSAP ScrollTrigger and ScrollToPlugin
         gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
@@ -2090,13 +2567,11 @@
         function create3DViewer(containerId, modelPath, scale = 1, yPosition = 0, cameraConfig = {}) {
             const container = document.getElementById(containerId);
             const loadingIndicator = container.querySelector('.loading-indicator');
-            
-            // Add this model to loading manager
-            loadingManager.addModel(containerId, 100);
+            const estimatedSize = cameraConfig.estimatedSize || 3 * 1024 * 1024;
             
             // Create scene
             const viewerScene = new THREE.Scene();
-            viewerScene.background = new THREE.Color(0x000000);
+            viewerScene.background = null;
             
             // Default camera config
             const camX = cameraConfig.x || 0;
@@ -2120,31 +2595,42 @@
             });
             viewerRenderer.setSize(container.clientWidth, container.clientHeight);
             viewerRenderer.setPixelRatio(window.devicePixelRatio);
-            viewerRenderer.shadowMap.enabled = true;
+            viewerRenderer.shadowMap.enabled = !getThemeColors().isLight;
             viewerRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            viewerRenderer.setClearColor(0x000000, 1);
+            viewerRenderer.setClearColor(0x000000, 0);
             container.appendChild(viewerRenderer.domElement);
-            
-            // Add lights - improved for better model visibility
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, getThemeColors().isLight ? 1.1 : 0.8);
             viewerScene.add(ambientLight);
             
-            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, getThemeColors().isLight ? 0.7 : 1.0);
             directionalLight1.position.set(5, 5, 5);
             directionalLight1.castShadow = true;
             viewerScene.add(directionalLight1);
             
-            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, getThemeColors().isLight ? 0.4 : 0.6);
             directionalLight2.position.set(-5, 5, -5);
             viewerScene.add(directionalLight2);
             
-            const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            const fillLight = new THREE.DirectionalLight(0xffffff, getThemeColors().isLight ? 0.35 : 0.5);
             fillLight.position.set(0, -3, 3);
             viewerScene.add(fillLight);
             
-            const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            const backLight = new THREE.DirectionalLight(0xffffff, getThemeColors().isLight ? 0.25 : 0.4);
             backLight.position.set(0, 0, -5);
             viewerScene.add(backLight);
+
+            threeViewers.push({
+                scene: viewerScene,
+                renderer: viewerRenderer,
+                lights: {
+                    ambient: ambientLight,
+                    directional1: directionalLight1,
+                    directional2: directionalLight2,
+                    fill: fillLight,
+                    back: backLight
+                }
+            });
             
             // Add OrbitControls
             const controls = new THREE.OrbitControls(viewerCamera, viewerRenderer.domElement);
@@ -2195,10 +2681,9 @@
                     // Enable shadows
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
+                            child.castShadow = !getThemeColors().isLight;
+                            child.receiveShadow = !getThemeColors().isLight;
                             
-                            // Enhance material
                             if (child.material) {
                                 child.material.metalness = 0.3;
                                 child.material.roughness = 0.6;
@@ -2218,22 +2703,13 @@
                     loadingManager.updateModel(containerId, 100);
                 },
                 (xhr) => {
+                    let percentComplete;
                     if (xhr.lengthComputable) {
-                        const percentComplete = (xhr.loaded / xhr.total) * 100;
-                        console.log(`${modelPath}: ${Math.round(percentComplete)}% loaded`);
-                        
-                        // Update loading manager with progress
-                        loadingManager.updateModel(containerId, percentComplete);
-                        
-                        if (loadingIndicator) {
-                            loadingIndicator.textContent = `LOADING ${Math.round(percentComplete)}%`;
-                        }
+                        percentComplete = (xhr.loaded / xhr.total) * 100;
                     } else {
-                        console.log(`${modelPath}: Loading... (${(xhr.loaded / 1024 / 1024).toFixed(2)}MB)`);
-                        if (loadingIndicator) {
-                            loadingIndicator.textContent = `LOADING... ${(xhr.loaded / 1024 / 1024).toFixed(1)}MB`;
-                        }
+                        percentComplete = Math.min(95, (xhr.loaded / estimatedSize) * 100);
                     }
+                    loadingManager.updateModel(containerId, percentComplete);
                 },
                 (error) => {
                     console.error(`Error loading model ${modelPath}:`, error);
@@ -2242,6 +2718,7 @@
                         loadingIndicator.style.opacity = '0.5';
                         loadingIndicator.style.color = '#ff6b6b';
                     }
+                    loadingManager.updateModel(containerId, 100);
                 }
             );
             
@@ -2265,15 +2742,18 @@
         }
 
         // Initialize 3D model viewers with actual GLB models
-        create3DViewer('marcus-viewer', 'marcus_aurelius.glb', 1, 0);
-        create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0);
-        create3DViewer('seneca-viewer', 'nero_and_seneca.glb', 1.1, -0.3, { 
-            x: -0.3, 
-            y: 0.3, 
-            z: 5, 
+        create3DViewer('marcus-viewer', 'marcus_aurelius.glb', 1, 0, { estimatedSize: 3 * 1024 * 1024 });
+        create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0, { estimatedSize: 2.5 * 1024 * 1024 });
+        create3DViewer('seneca-viewer', 'nero_and_seneca.glb', 1.1, -0.3, {
+            x: -0.3,
+            y: 0.3,
+            z: 5,
             fov: 48,
-            rotateY: -0.3
+            rotateY: -0.3,
+            estimatedSize: 4 * 1024 * 1024
         });
+
+        applyThemeTo3D();
 
         // Menu Toggle
         const menuToggle = document.getElementById('menuToggle');
@@ -2282,7 +2762,9 @@
         menuToggle.addEventListener('click', () => {
             menuToggle.classList.toggle('active');
             fullscreenMenu.classList.toggle('active');
-            document.body.style.overflow = fullscreenMenu.classList.contains('active') ? 'hidden' : 'auto';
+            const isOpen = fullscreenMenu.classList.contains('active');
+            document.body.classList.toggle('menu-open', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : 'auto';
         });
 
         // Close menu when clicking on a link
@@ -2290,6 +2772,7 @@
             link.addEventListener('click', () => {
                 menuToggle.classList.remove('active');
                 fullscreenMenu.classList.remove('active');
+                document.body.classList.remove('menu-open');
                 document.body.style.overflow = 'auto';
             });
         });
@@ -2509,12 +2992,12 @@
         }, observerOptions);
 
         // Observe elements
-        document.querySelectorAll('.scroll-animate, .philosopher-item, .timeline-item, .virtue-item, .practice-card').forEach(el => {
+        document.querySelectorAll('.scroll-animate, .philosopher-item, .timeline-item, .virtue-item, .practice-card, .book-card').forEach(el => {
             observer.observe(el);
         });
 
         // Text glitch effect on hover
-        document.querySelectorAll('.big-text, .philosophers-title, .virtues-title, .practices-title').forEach(text => {
+        document.querySelectorAll('.big-text, .philosophers-title, .virtues-title, .practices-title, .books-title').forEach(text => {
             text.addEventListener('mouseenter', () => {
                 gsap.to(text, {
                     textShadow: '3px 3px rgba(255,255,255,0.3), -3px -3px rgba(255,255,255,0.3)',
@@ -2529,49 +3012,12 @@
             });
         });
 
-        // Track resources loading
-        let checkInterval = setInterval(() => {
-            if (resourcesLoaded < totalResources) {
-                resourcesLoaded++;
-                loadingManager.updateModel('resources', (resourcesLoaded / totalResources) * 100);
+        // Safety fallback — only if models fail to report completion
+        setTimeout(() => {
+            if (document.body.classList.contains('loading')) {
+                loadingManager.complete();
             }
-        }, 100);
-
-        // Loading animation - complete when everything is loaded
-        window.addEventListener('load', () => {
-            clearInterval(checkInterval);
-            // Mark resources as fully loaded
-            loadingManager.updateModel('resources', 100);
-            
-            // Small delay to ensure all 3D models are ready
-            setTimeout(() => {
-                // Check if all models are loaded
-                let allModelsLoaded = true;
-                for (let modelName in loadingManager.models) {
-                    if (modelName !== 'resources' && loadingManager.models[modelName].loaded < 100) {
-                        allModelsLoaded = false;
-                        break;
-                    }
-                }
-                
-                // Complete loading
-                if (allModelsLoaded || loadingManager.percentage >= 90) {
-                    loadingManager.complete();
-                } else {
-                    // Wait a bit more for models
-                    setTimeout(() => loadingManager.complete(), 1500);
-                }
-            }, 500);
-        });
-
-        // Fallback in case load event doesn't fire
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (document.body.classList.contains('loading')) {
-                    loadingManager.complete();
-                }
-            }, 8000); // Give models time to load
-        });
+        }, 60000);
 
         // Stoic Figure Interactive Animation with Anime.js
         const stoicFigure = document.getElementById('stoicFigure');
@@ -2884,27 +3330,19 @@
         animateParallax();
 
         // Section-specific interactive effects
-        const philosophySection = document.querySelector('.philosophy-section');
-        if (philosophySection) {
-            philosophySection.addEventListener('mousemove', (e) => {
-                const rect = philosophySection.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width - 0.5) * 100;
-                const y = ((e.clientY - rect.top) / rect.height - 0.5) * 100;
-                
-                philosophySection.style.background = `radial-gradient(circle at ${50 + x/5}% ${50 + y/5}%, rgba(20,20,20,1), rgba(10,10,10,1))`;
-            });
+        const booksSection = document.querySelector('.books-section');
+        if (booksSection) {
+            bindSectionSpotlight(booksSection);
         }
 
-        // Virtue section interactive background
+        const philosophySection = document.querySelector('.philosophy-section');
+        if (philosophySection) {
+            bindSectionSpotlight(philosophySection);
+        }
+
         const virtuesSection = document.querySelector('.virtues-section');
         if (virtuesSection) {
-            virtuesSection.addEventListener('mousemove', (e) => {
-                const rect = virtuesSection.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                
-                virtuesSection.style.background = `radial-gradient(circle at ${x}% ${y}%, rgba(25,25,25,1), rgba(15,15,15,1))`;
-            });
+            bindSectionSpotlight(virtuesSection);
         }
 
         // Add particle effect on mousemove
@@ -2969,24 +3407,24 @@
         animateCursor();
 
         // Cursor hover effects
-        const interactiveElements = document.querySelectorAll('a, button, .menu-toggle, .stoic-illustration, .philosopher-3d-viewer, .practice-card, .virtue-item, .timeline-content');
+        const interactiveElements = document.querySelectorAll('a, button, .menu-toggle, .theme-toggle, .stoic-illustration, .philosopher-3d-viewer, .practice-card, .virtue-item, .timeline-content, .book-card');
         
         interactiveElements.forEach(el => {
             el.addEventListener('mouseenter', () => {
                 cursor.style.width = '40px';
                 cursor.style.height = '40px';
-                cursor.style.borderColor = 'rgba(255, 255, 255, 1)';
+                cursor.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
             });
             
             el.addEventListener('mouseleave', () => {
                 cursor.style.width = '20px';
                 cursor.style.height = '20px';
-                cursor.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                cursor.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--decoration-strong').trim();
             });
         });
 
         // Title click effects
-        document.querySelectorAll('.philosophers-title, .virtues-title, .practices-title, .timeline-title').forEach(title => {
+        document.querySelectorAll('.philosophers-title, .virtues-title, .practices-title, .timeline-title, .books-title').forEach(title => {
             title.addEventListener('click', () => {
                 // Create ripple effect
                 for (let i = 0; i < 3; i++) {
