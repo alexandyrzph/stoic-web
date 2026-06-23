@@ -70,9 +70,9 @@ Then visit: http://localhost:3000
 ## 📁 Your Files
 - ✅ `index.html` - Main page
 - ✅ `favicon.svg` - Site icon
-- ✅ `epictetus.glb` - 3D model
-- ✅ `marcus_aurelius (1).glb` - 3D model
-- ✅ `nero_and_seneca.glb` - 3D model
+- ✅ `epictetus.glb` - 3D model (~1.5 MB, Draco compressed)
+- ✅ `marcus_aurelius.glb` - 3D model (~1.3 MB, Draco compressed)
+- ✅ `nero_and_seneca.glb` - 3D model (~1.2 MB, Draco compressed)
 
 All files are ready for deployment!
 
@@ -89,9 +89,13 @@ Once deployed, you can add a custom domain like `www.yourdomain.com`:
 
 ## ⚠️ Note About 3D Models
 
-The `.glb` files are large (especially 44,204 lines for epictetus.glb). 
-They will work fine but may take a moment to load on slower connections.
-Consider optimizing them with: https://gltf.report/
+Models are Draco-compressed (~4 MB total). Originals are kept locally in `models-original/` for re-export.
+To re-optimize after replacing a model:
+
+```bash
+npx @gltf-transform/cli resize models-original/MODEL.glb /tmp/MODEL.glb --width 1024 --height 1024
+npx @gltf-transform/cli optimize /tmp/MODEL.glb MODEL.glb --compress draco --texture-compress false
+```
 
 ---
 

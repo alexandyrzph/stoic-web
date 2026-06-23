@@ -14,7 +14,11 @@
     </script>
     <title>Stoicism - Ancient Wisdom for Modern Times</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preload" href="marcus_aurelius.glb" as="fetch" crossorigin>
+    <link rel="preload" href="epictetus.glb" as="fetch" crossorigin>
+    <link rel="preload" href="nero_and_seneca.glb" as="fetch" crossorigin>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -162,6 +166,165 @@
 
         body.loaded {
             overflow-x: hidden;
+        }
+
+        /* View Transitions — same-origin navigations (progressive enhancement) */
+        @view-transition {
+            navigation: auto;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            ::view-transition-old(root) {
+                animation: page-exit-fade 0.4s ease-in both;
+            }
+
+            ::view-transition-new(root) {
+                animation: page-enter-fade 0.45s ease-out both;
+            }
+        }
+
+        @keyframes page-exit-fade {
+            to {
+                opacity: 0;
+                transform: scale(0.985);
+            }
+        }
+
+        @keyframes page-enter-fade {
+            from {
+                opacity: 0;
+                transform: scale(1.015);
+            }
+        }
+
+        /* External link page transition overlay */
+        .page-transition {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(100%);
+            transition:
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.35s ease,
+                visibility 0.35s ease;
+        }
+
+        .page-transition.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .page-transition-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 640px;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.45s ease 0.18s, transform 0.45s ease 0.18s;
+        }
+
+        .page-transition.active .page-transition-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .page-transition-eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            opacity: 0.45;
+            margin-bottom: 24px;
+        }
+
+        .page-transition-title {
+            font-size: clamp(36px, 7vw, 64px);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            margin-bottom: 16px;
+        }
+
+        .page-transition-dest {
+            font-size: 14px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-bottom: 40px;
+        }
+
+        .page-transition-bar {
+            width: 120px;
+            height: 2px;
+            background: var(--border-subtle);
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 1px;
+        }
+
+        .page-transition-bar::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: var(--text-primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            animation: none;
+        }
+
+        .page-transition.active .page-transition-bar::after {
+            animation: transition-progress 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes transition-progress {
+            to { transform: scaleX(1); }
+        }
+
+        body.is-navigating {
+            overflow: hidden;
+            cursor: wait;
+        }
+
+        body.is-navigating .custom-cursor,
+        body.is-navigating .custom-cursor-dot {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        body.is-navigating #loadingScreen ~ *:not(.page-transition) {
+            transition: opacity 0.4s ease, filter 0.4s ease;
+        }
+
+        body.is-navigating.is-navigating-fade #loadingScreen ~ *:not(.page-transition) {
+            opacity: 0.15;
+            filter: blur(3px);
+        }
+
+        .book-link.is-leaving {
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-transition {
+                transition: none;
+                transform: none;
+            }
+
+            .page-transition-content {
+                transition: none;
+                transform: none;
+                opacity: 1;
+            }
         }
 
         /* Text Selection Styles */
@@ -1955,6 +2118,16 @@
         <div class="loading-text" id="loadingText">Loading Ancient Wisdom...</div>
     </div>
 
+    <!-- External page transition overlay -->
+    <div class="page-transition" id="pageTransition" aria-hidden="true">
+        <div class="page-transition-content">
+            <p class="page-transition-eyebrow">Opening</p>
+            <h2 class="page-transition-title" id="pageTransitionTitle"></h2>
+            <p class="page-transition-dest" id="pageTransitionDest"></p>
+            <div class="page-transition-bar" aria-hidden="true"></div>
+        </div>
+    </div>
+
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor"></div>
     <div class="custom-cursor-dot" id="customCursorDot"></div>
@@ -2242,7 +2415,7 @@
                 <p class="book-description">
                     Private notes on resilience, duty, and self-mastery — never intended for publication, yet among the most influential works of philosophy ever written.
                 </p>
-                <a class="book-link" href="https://www.gutenberg.org/ebooks/2680" target="_blank" rel="noopener noreferrer">Read the text</a>
+                <a class="book-link" href="https://www.gutenberg.org/ebooks/2680" rel="noopener noreferrer">Read the text</a>
             </article>
             <article class="book-card scroll-animate">
                 <div class="book-number">02</div>
@@ -2251,7 +2424,7 @@
                 <p class="book-description">
                     Practical essays on friendship, mortality, anger, and living well — written as letters but read as timeless counsel on navigating life's difficulties with grace.
                 </p>
-                <a class="book-link" href="https://en.wikisource.org/wiki/Moral_letters_to_Lucilius" target="_blank" rel="noopener noreferrer">Read the text</a>
+                <a class="book-link" href="https://en.wikisource.org/wiki/Moral_letters_to_Lucilius" rel="noopener noreferrer">Read the text</a>
             </article>
             <article class="book-card scroll-animate">
                 <div class="book-number">03</div>
@@ -2260,7 +2433,7 @@
                 <p class="book-description">
                     A concise handbook distilling Epictetus's core teaching: distinguish what is in your power from what is not, and find freedom in that distinction.
                 </p>
-                <a class="book-link" href="https://www.gutenberg.org/ebooks/45109" target="_blank" rel="noopener noreferrer">Read the text</a>
+                <a class="book-link" href="https://www.gutenberg.org/ebooks/45109" rel="noopener noreferrer">Read the text</a>
             </article>
         </div>
     </section>
@@ -2423,6 +2596,13 @@
 
         loadingManager.init(MODEL_IDS);
 
+        const dracoLoader = new THREE.DRACOLoader();
+        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+        dracoLoader.preload();
+
+        const gltfLoader = new THREE.GLTFLoader();
+        gltfLoader.setDRACOLoader(dracoLoader);
+
         const threeViewers = [];
 
         function getThemeColors() {
@@ -2567,7 +2747,7 @@
         function create3DViewer(containerId, modelPath, scale = 1, yPosition = 0, cameraConfig = {}) {
             const container = document.getElementById(containerId);
             const loadingIndicator = container.querySelector('.loading-indicator');
-            const estimatedSize = cameraConfig.estimatedSize || 3 * 1024 * 1024;
+            const estimatedSize = cameraConfig.estimatedSize || 1.4 * 1024 * 1024;
             
             // Create scene
             const viewerScene = new THREE.Scene();
@@ -2652,10 +2832,9 @@
             }
             
             // Load GLB model
-            const loader = new THREE.GLTFLoader();
             console.log(`Loading model: ${modelPath}`);
             
-            loader.load(
+            gltfLoader.load(
                 modelPath,
                 (gltf) => {
                     console.log(`Model loaded successfully: ${modelPath}`);
@@ -2742,18 +2921,86 @@
         }
 
         // Initialize 3D model viewers with actual GLB models
-        create3DViewer('marcus-viewer', 'marcus_aurelius.glb', 1, 0, { estimatedSize: 3 * 1024 * 1024 });
-        create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0, { estimatedSize: 2.5 * 1024 * 1024 });
+        create3DViewer('marcus-viewer', 'marcus_aurelius.glb', 1, 0, { estimatedSize: 1.35 * 1024 * 1024 });
+        create3DViewer('epictetus-viewer', 'epictetus.glb', 1, 0, { estimatedSize: 1.52 * 1024 * 1024 });
         create3DViewer('seneca-viewer', 'nero_and_seneca.glb', 1.1, -0.3, {
             x: -0.3,
             y: 0.3,
             z: 5,
             fov: 48,
             rotateY: -0.3,
-            estimatedSize: 4 * 1024 * 1024
+            estimatedSize: 1.27 * 1024 * 1024
         });
 
         applyThemeTo3D();
+
+        function getDestinationLabel(url) {
+            try {
+                const host = new URL(url).hostname.replace(/^www\./, '');
+                if (host.includes('gutenberg.org')) return 'Project Gutenberg';
+                if (host.includes('wikisource.org')) return 'Wikisource';
+                if (host.includes('wikipedia.org')) return 'Wikipedia';
+                return host;
+            } catch {
+                return '';
+            }
+        }
+
+        function navigateWithTransition(url, title, linkEl) {
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reducedMotion) {
+                window.location.assign(url);
+                return;
+            }
+
+            const overlay = document.getElementById('pageTransition');
+            const titleEl = document.getElementById('pageTransitionTitle');
+            const destEl = document.getElementById('pageTransitionDest');
+
+            titleEl.textContent = title;
+            destEl.textContent = getDestinationLabel(url);
+
+            if (linkEl) linkEl.classList.add('is-leaving');
+
+            const activateOverlay = () => {
+                document.body.classList.add('is-navigating');
+                requestAnimationFrame(() => {
+                    document.body.classList.add('is-navigating-fade');
+                });
+                overlay.classList.add('active');
+                overlay.setAttribute('aria-hidden', 'false');
+            };
+
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            const run = async () => {
+                activateOverlay();
+                await wait(720);
+                window.location.assign(url);
+            };
+
+            if (document.startViewTransition) {
+                document.startViewTransition(async () => {
+                    activateOverlay();
+                    await wait(720);
+                }).finished.then(() => {
+                    window.location.assign(url);
+                }).catch(() => {
+                    window.location.assign(url);
+                });
+            } else {
+                run();
+            }
+        }
+
+        document.querySelectorAll('.book-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const card = link.closest('.book-card');
+                const title = card?.querySelector('.book-title')?.textContent?.trim() || 'Reading';
+                navigateWithTransition(link.href, title, link);
+            });
+        });
 
         // Menu Toggle
         const menuToggle = document.getElementById('menuToggle');
